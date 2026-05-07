@@ -183,7 +183,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;height:
   .card{background:#fff!important;border:1px solid #ddd!important;margin-bottom:12px!important;break-inside:avoid}
 }
 @media(max-width:680px){
-  /* Header — wrap tabs onto second row */
+  /* Header */
   .hdr{flex-wrap:wrap;height:auto;padding:7px 10px;gap:6px}
   .logo{font-size:12px}
   .logo em{display:none}
@@ -192,20 +192,27 @@ body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;height:
   .tab{font-size:8px;padding:4px 9px}
   .hdr-r{gap:6px}
   .hdr-clock,.hdr-date{display:none}
-  /* Main padding */
-  .main{padding:10px}
-  /* Grid columns */
+  /* Main */
+  .main{padding:10px;overflow-x:hidden}
+  body{overflow-x:hidden}
+  /* Named grids */
+  .g2{grid-template-columns:1fr}
   .g3{grid-template-columns:1fr 1fr}
   .g4{grid-template-columns:1fr 1fr}
   .g2-3{grid-template-columns:1fr}
+  /* Xiomara — stack chat + quick actions vertically */
+  #main [style*="310px"]{grid-template-columns:1fr!important;height:auto!important}
+  #main [style*="310px"]>div:first-child{min-height:55vh}
+  /* Travel city form — compact grids */
+  [style*="52px 1fr 1fr"]{grid-template-columns:52px 1fr!important}
+  [style*="80px 80px 80px"]{grid-template-columns:1fr 1fr!important}
   /* Entertainment */
   #ent-grid [style*="1fr 295px"]{grid-template-columns:1fr!important}
   #ent-grid [style*="repeat(4"]{grid-template-columns:1fr 1fr!important}
   /* Geo map */
   #geo-map{height:260px}
-  /* Prevent horizontal scroll */
-  body{overflow-x:hidden}
-  .main{overflow-x:hidden}
+  /* Montreal CCTV section — single column */
+  [style*="3fr 2fr"]{grid-template-columns:1fr!important}
 }
 </style>
 </head>
@@ -1539,54 +1546,38 @@ function tMontreal() {
 
     <div style="display:grid;grid-template-columns:3fr 2fr;gap:12px">
 
-      <!-- Interactive map -->
-      <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-          <span style="font-size:9px;color:var(--mu)">🗺 Interactive Road Map — camera icons are clickable</span>
-          <button onclick="window.open('https://www.quebec511.info/fr/Carte/Default.aspx','_blank')" class="rbtn">Full Screen ↗</button>
+      <!-- Interactive map — opens in browser (511.info blocks embedding) -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="padding:18px;background:var(--s2);border:1px solid rgba(0,207,255,.15);border-radius:var(--rs);text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">🗺️</div>
+          <div style="font-size:11px;font-weight:700;color:var(--tx);margin-bottom:4px">Québec 511 — Interactive Map</div>
+          <div style="font-size:9px;color:var(--mu);margin-bottom:14px">Live road conditions · Camera icons are clickable on the map</div>
+          <button onclick="window.open('https://www.quebec511.info/fr/Carte/Default.aspx','_blank')"
+            style="padding:10px 22px;background:rgba(0,207,255,.12);border:1px solid rgba(0,207,255,.3);border-radius:var(--rs);color:var(--cy);font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.06em">Open Map ↗</button>
         </div>
-        <iframe
-          src="https://www.quebec511.info/fr/Carte/Default.aspx"
-          style="width:100%;height:430px;border:none;border-radius:var(--rs);background:var(--s2);display:block"
-          title="Québec 511 Traffic Map" allowfullscreen>
-        </iframe>
+        <div style="padding:18px;background:var(--s2);border:1px solid rgba(201,168,76,.15);border-radius:var(--rs);text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">📷</div>
+          <div style="font-size:11px;font-weight:700;color:var(--tx);margin-bottom:4px">Traffic Camera Feed</div>
+          <div style="font-size:9px;color:var(--mu);margin-bottom:14px">Live camera snapshots — find IDs by clicking 📷 icons on the map</div>
+          <button onclick="window.open('https://www.quebec511.info/fr/Diffusion/EtatReseau/Camera.aspx?Type=1&Id=13000','_blank')"
+            style="padding:10px 22px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.28);border-radius:var(--rs);color:var(--gold);font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.06em">Open Cameras ↗</button>
+        </div>
+        <div style="padding:9px 10px;background:var(--s2);border-radius:var(--rs);font-size:9px;color:var(--mu);line-height:1.7">
+          <b style="color:var(--cy)">Quick links:</b><br>
+          <span style="cursor:pointer;color:var(--cy)" onclick="window.open('https://www.quebec511.info/fr/Diffusion/EtatReseau/Camera.aspx?Type=1&Id=13000','_blank')">A-40 / Décarie (13000)</span>
+          &nbsp;·&nbsp;
+          <span style="cursor:pointer;color:var(--cy)" onclick="window.open('https://www.quebec511.info/fr/Carte/Default.aspx','_blank')">Full road map</span>
+        </div>
       </div>
 
-      <!-- Camera viewer -->
+      <!-- City services quick links -->
       <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="font-size:9px;color:var(--mu)">📷 Camera Viewer</div>
-
-        <div style="display:flex;gap:6px">
-          <input id="cam-id" type="number" value="13000" placeholder="Camera ID…"
-            style="flex:1;padding:7px 10px;background:var(--s2);border:1px solid var(--dm);border-radius:var(--rs);color:var(--tx);font-size:12px;outline:none;font-family:'Inter',sans-serif;-moz-appearance:textfield">
-          <button onclick="loadCam()"
-            style="padding:7px 13px;background:rgba(0,207,255,.1);border:1px solid rgba(0,207,255,.25);border-radius:var(--rs);color:var(--cy);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.04em">Load</button>
-        </div>
-
-        <iframe id="cam-frame"
-          src="https://www.quebec511.info/fr/Diffusion/EtatReseau/Camera.aspx?Type=1&Id=13000"
-          style="width:100%;height:260px;border:none;border-radius:var(--rs);background:var(--s2);display:block"
-          title="Camera Feed">
-        </iframe>
-
-        <div style="display:flex;gap:6px">
-          <button onclick="window.open(document.getElementById('cam-frame')?.src,'_blank')"
-            style="flex:1;padding:6px;background:rgba(0,207,255,.05);border:1px solid rgba(0,207,255,.14);border-radius:var(--rs);color:var(--cy);font-size:9px;font-weight:800;cursor:pointer">Open Camera ↗</button>
-          <button onclick="window.open('https://www.quebec511.info/fr/Carte/Default.aspx','_blank')"
-            style="flex:1;padding:6px;background:rgba(255,140,66,.05);border:1px solid rgba(255,140,66,.14);border-radius:var(--rs);color:var(--or);font-size:9px;font-weight:800;cursor:pointer">Browse Map ↗</button>
-        </div>
-
-        <div style="padding:9px 10px;background:var(--s2);border-radius:var(--rs);font-size:9px;color:var(--mu);line-height:1.8">
-          <b style="color:var(--cy)">How to find camera IDs:</b><br>
-          Open the map → click any 📷 icon → copy the ID from the URL → paste above and hit Load.<br><br>
-          <b style="color:var(--or)">Quick load:</b><br>
-          ${[
-            ['A-40 / Décarie', 13000],
-          ].map(([label, id]) => `<span style="color:var(--tx);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(0,207,255,.4)"
-            onclick="document.getElementById('cam-id').value=${id};loadCam()">${label} (${id})</span>`).join(' &nbsp;·&nbsp; ')}
-          <br><br>
-          <span style="color:var(--dim,rgba(150,180,255,.2))">More cameras available via the map →</span>
-        </div>
+        ${[
+          TOOLS[4], TOOLS[5], TOOLS[6],
+          {icon:'🚑',name:'MTL Urgences-santé',desc:'Emergency medical dispatch',url:'https://www.urgences-sante.qc.ca/'},
+          {icon:'🏙️',name:'Ville de Montréal',desc:'City news & service alerts',url:'https://montreal.ca/en/articles'},
+          {icon:'🎭',name:'Tourisme Montréal',desc:'Events & festivals calendar',url:'https://www.mtl.org/en'},
+        ].map(t=>`<button class="tb" onclick="window.open('${t.url}','_blank')"><div class="tb-icon">${t.icon}</div><div><div class="tb-name">${t.name}</div><div class="tb-desc">${t.desc}</div></div><span class="tb-arrow">↗</span></button>`).join('')}
       </div>
 
     </div>

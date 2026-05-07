@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HYK 日本語</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a1a;--s1:#0f0f24;--s2:#141428;--bd:rgba(201,168,76,.14);--dm:rgba(255,255,255,.06);
+  --tx:#e8e0d0;--mu:rgba(232,224,208,.45);--gold:#C9A84C;--gn:#00E59B;--rd:#FF3355;--cy:#00CFFF;--pu:#9B72FF;
+  --r:8px;--rs:5px
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+#pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:14px;display:none}
+.page.active{display:block}
+
+/* Bottom nav */
+nav{display:flex;background:var(--s1);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0)}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px 7px;background:none;border:none;cursor:pointer;gap:3px;position:relative}
+.ni{font-size:20px;line-height:1;transition:filter .2s}
+.nl{font-size:9px;color:rgba(255,255,255,.28);text-transform:uppercase;font-weight:700;letter-spacing:.05em;transition:color .2s}
+nav button.active .nl{color:var(--gold)}
+nav button.active .ni{filter:drop-shadow(0 0 5px rgba(201,168,76,.7))}
+nav button.active::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:26px;height:2px;background:var(--gold);border-radius:0 0 2px 2px}
+
+/* Cards */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.ct{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ctd{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.prog{height:6px;background:var(--s2);border-radius:3px;overflow:hidden;margin:5px 0}
+.progf{height:100%;border-radius:3px;transition:width .4s ease}
+
+/* Kana chart */
+.kana-row-label{font-size:10px;font-weight:800;color:var(--mu);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;margin-top:12px}
+.kana-row{display:flex;flex-wrap:wrap;gap:5px}
+.kana-cell{width:54px;min-height:54px;background:var(--s2);border:1px solid var(--dm);border-radius:var(--rs);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:default;transition:border-color .15s}
+.kana-cell.mastered{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.4)}
+.kana-char{font-size:22px;line-height:1.2}
+.kana-romaji{font-size:9px;color:var(--mu);font-weight:600;letter-spacing:.04em}
+.kana-cell.mastered .kana-romaji{color:var(--gold)}
+
+/* Quiz */
+.quiz-wrap{max-width:360px;margin:0 auto;padding:10px 0}
+.quiz-display{font-size:88px;text-align:center;padding:20px 0 10px;line-height:1}
+.quiz-question{text-align:center;font-size:12px;color:var(--mu);margin-bottom:20px}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.qopt{padding:14px 8px;background:var(--s2);border:1px solid var(--dm);border-radius:var(--r);color:var(--tx);font-size:16px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.06em}
+.qopt:active{opacity:.7}
+.qopt.correct{background:rgba(0,229,155,.14);border-color:var(--gn);color:var(--gn)}
+.qopt.wrong{background:rgba(255,51,85,.1);border-color:var(--rd);color:var(--rd)}
+.qopt.reveal{background:rgba(0,229,155,.07);border-color:rgba(0,229,155,.35)}
+.quiz-stats{display:flex;justify-content:space-between;font-size:10px;color:var(--mu);margin-bottom:14px;padding:7px 10px;background:var(--s2);border-radius:var(--rs)}
+.quiz-stats span b{color:var(--tx)}
+.quiz-feedback{text-align:center;font-size:15px;font-weight:700;min-height:22px;margin-bottom:8px}
+.skip-btn{width:100%;padding:10px;background:none;border:1px solid var(--dm);border-radius:var(--rs);color:var(--mu);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.05em;transition:all .15s}
+.skip-btn:active{background:var(--s2)}
+
+/* Goals */
+.goal-item{display:flex;align-items:center;gap:12px;padding:11px 13px;background:var(--s2);border:1px solid var(--dm);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+.goal-item.done{border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.05)}
+.goal-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--dm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s}
+.goal-item.done .goal-check{background:var(--gold);border-color:var(--gold)}
+.goal-text{font-size:12px;font-weight:600;color:var(--tx);transition:color .15s}
+.goal-item.done .goal-text{color:var(--mu);text-decoration:line-through}
+.goal-xp{font-size:9px;font-weight:800;color:var(--gold);margin-left:auto;letter-spacing:.04em}
+.add-goal-row{display:flex;gap:8px;margin-top:10px}
+.add-goal-inp{flex:1;padding:9px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);font-size:12px;outline:none;font-family:'Inter',sans-serif}
+.add-goal-btn{padding:9px 14px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:var(--rs);color:var(--gold);font-size:11px;font-weight:800;cursor:pointer}
+
+/* Streak / Stats */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--dm)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{font-size:11px;color:var(--mu)}
+.stat-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--gold)}
+.streak-big{font-family:'Orbitron',monospace;font-size:48px;font-weight:900;color:var(--gold);text-align:center;line-height:1;text-shadow:0 0 20px rgba(201,168,76,.35)}
+.streak-sub{text-align:center;font-size:11px;color:var(--mu);letter-spacing:.08em;margin-top:4px}
+.xp-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:20px;font-size:11px;font-weight:800;color:var(--gold);letter-spacing:.06em}
+
+/* Tab pills for kana type */
+.pill-row{display:flex;gap:6px;margin-bottom:14px;background:var(--s2);padding:3px;border-radius:var(--rs)}
+.pill{flex:1;padding:6px;border:none;background:none;color:var(--mu);font-size:10px;font-weight:800;cursor:pointer;border-radius:4px;letter-spacing:.05em;text-transform:uppercase;transition:all .15s}
+.pill.active{background:rgba(201,168,76,.16);color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="pages">
+    <div class="page active" id="page-home"></div>
+    <div class="page" id="page-kana"></div>
+    <div class="page" id="page-quiz"></div>
+    <div class="page" id="page-goals"></div>
+  </div>
+  <nav>
+    <button class="active" data-page="home" onclick="nav(this)">
+      <span class="ni">🏠</span><span class="nl">Home</span>
+    </button>
+    <button data-page="kana" onclick="nav(this)">
+      <span class="ni">ひ</span><span class="nl">Kana</span>
+    </button>
+    <button data-page="quiz" onclick="nav(this)">
+      <span class="ni">🃏</span><span class="nl">Quiz</span>
+    </button>
+    <button data-page="goals" onclick="nav(this)">
+      <span class="ni">📋</span><span class="nl">Goals</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────────
+const HIRAGANA=[
+  {k:"あ",r:"a",row:"Vowels"},{k:"い",r:"i",row:"Vowels"},{k:"う",r:"u",row:"Vowels"},{k:"え",r:"e",row:"Vowels"},{k:"お",r:"o",row:"Vowels"},
+  {k:"か",r:"ka",row:"K-row"},{k:"き",r:"ki",row:"K-row"},{k:"く",r:"ku",row:"K-row"},{k:"け",r:"ke",row:"K-row"},{k:"こ",r:"ko",row:"K-row"},
+  {k:"さ",r:"sa",row:"S-row"},{k:"し",r:"shi",row:"S-row"},{k:"す",r:"su",row:"S-row"},{k:"せ",r:"se",row:"S-row"},{k:"そ",r:"so",row:"S-row"},
+  {k:"た",r:"ta",row:"T-row"},{k:"ち",r:"chi",row:"T-row"},{k:"つ",r:"tsu",row:"T-row"},{k:"て",r:"te",row:"T-row"},{k:"と",r:"to",row:"T-row"},
+  {k:"な",r:"na",row:"N-row"},{k:"に",r:"ni",row:"N-row"},{k:"ぬ",r:"nu",row:"N-row"},{k:"ね",r:"ne",row:"N-row"},{k:"の",r:"no",row:"N-row"},
+  {k:"は",r:"ha",row:"H-row"},{k:"ひ",r:"hi",row:"H-row"},{k:"ふ",r:"fu",row:"H-row"},{k:"へ",r:"he",row:"H-row"},{k:"ほ",r:"ho",row:"H-row"},
+  {k:"ま",r:"ma",row:"M-row"},{k:"み",r:"mi",row:"M-row"},{k:"む",r:"mu",row:"M-row"},{k:"め",r:"me",row:"M-row"},{k:"も",r:"mo",row:"M-row"},
+  {k:"や",r:"ya",row:"Y-row"},{k:"ゆ",r:"yu",row:"Y-row"},{k:"よ",r:"yo",row:"Y-row"},
+  {k:"ら",r:"ra",row:"R-row"},{k:"り",r:"ri",row:"R-row"},{k:"る",r:"ru",row:"R-row"},{k:"れ",r:"re",row:"R-row"},{k:"ろ",r:"ro",row:"R-row"},
+  {k:"わ",r:"wa",row:"W-row"},{k:"を",r:"wo",row:"W-row"},{k:"ん",r:"n",row:"N (ん)"},
+  {k:"が",r:"ga",row:"G-row"},{k:"ぎ",r:"gi",row:"G-row"},{k:"ぐ",r:"gu",row:"G-row"},{k:"げ",r:"ge",row:"G-row"},{k:"ご",r:"go",row:"G-row"},
+  {k:"ざ",r:"za",row:"Z-row"},{k:"じ",r:"ji",row:"Z-row"},{k:"ず",r:"zu",row:"Z-row"},{k:"ぜ",r:"ze",row:"Z-row"},{k:"ぞ",r:"zo",row:"Z-row"},
+  {k:"だ",r:"da",row:"D-row"},{k:"ぢ",r:"di",row:"D-row"},{k:"づ",r:"du",row:"D-row"},{k:"で",r:"de",row:"D-row"},{k:"ど",r:"do",row:"D-row"},
+  {k:"ば",r:"ba",row:"B-row"},{k:"び",r:"bi",row:"B-row"},{k:"ぶ",r:"bu",row:"B-row"},{k:"べ",r:"be",row:"B-row"},{k:"ぼ",r:"bo",row:"B-row"},
+  {k:"ぱ",r:"pa",row:"P-row"},{k:"ぴ",r:"pi",row:"P-row"},{k:"ぷ",r:"pu",row:"P-row"},{k:"ぺ",r:"pe",row:"P-row"},{k:"ぽ",r:"po",row:"P-row"},
+];
+const KATAKANA=[
+  {k:"ア",r:"a",row:"Vowels"},{k:"イ",r:"i",row:"Vowels"},{k:"ウ",r:"u",row:"Vowels"},{k:"エ",r:"e",row:"Vowels"},{k:"オ",r:"o",row:"Vowels"},
+  {k:"カ",r:"ka",row:"K-row"},{k:"キ",r:"ki",row:"K-row"},{k:"ク",r:"ku",row:"K-row"},{k:"ケ",r:"ke",row:"K-row"},{k:"コ",r:"ko",row:"K-row"},
+  {k:"サ",r:"sa",row:"S-row"},{k:"シ",r:"shi",row:"S-row"},{k:"ス",r:"su",row:"S-row"},{k:"セ",r:"se",row:"S-row"},{k:"ソ",r:"so",row:"S-row"},
+  {k:"タ",r:"ta",row:"T-row"},{k:"チ",r:"chi",row:"T-row"},{k:"ツ",r:"tsu",row:"T-row"},{k:"テ",r:"te",row:"T-row"},{k:"ト",r:"to",row:"T-row"},
+  {k:"ナ",r:"na",row:"N-row"},{k:"ニ",r:"ni",row:"N-row"},{k:"ヌ",r:"nu",row:"N-row"},{k:"ネ",r:"ne",row:"N-row"},{k:"ノ",r:"no",row:"N-row"},
+  {k:"ハ",r:"ha",row:"H-row"},{k:"ヒ",r:"hi",row:"H-row"},{k:"フ",r:"fu",row:"H-row"},{k:"ヘ",r:"he",row:"H-row"},{k:"ホ",r:"ho",row:"H-row"},
+  {k:"マ",r:"ma",row:"M-row"},{k:"ミ",r:"mi",row:"M-row"},{k:"ム",r:"mu",row:"M-row"},{k:"メ",r:"me",row:"M-row"},{k:"モ",r:"mo",row:"M-row"},
+  {k:"ヤ",r:"ya",row:"Y-row"},{k:"ユ",r:"yu",row:"Y-row"},{k:"ヨ",r:"yo",row:"Y-row"},
+  {k:"ラ",r:"ra",row:"R-row"},{k:"リ",r:"ri",row:"R-row"},{k:"ル",r:"ru",row:"R-row"},{k:"レ",r:"re",row:"R-row"},{k:"ロ",r:"ro",row:"R-row"},
+  {k:"ワ",r:"wa",row:"W-row"},{k:"ヲ",r:"wo",row:"W-row"},{k:"ン",r:"n",row:"N (ン)"},
+  {k:"ガ",r:"ga",row:"G-row"},{k:"ギ",r:"gi",row:"G-row"},{k:"グ",r:"gu",row:"G-row"},{k:"ゲ",r:"ge",row:"G-row"},{k:"ゴ",r:"go",row:"G-row"},
+  {k:"ザ",r:"za",row:"Z-row"},{k:"ジ",r:"ji",row:"Z-row"},{k:"ズ",r:"zu",row:"Z-row"},{k:"ゼ",r:"ze",row:"Z-row"},{k:"ゾ",r:"zo",row:"Z-row"},
+  {k:"ダ",r:"da",row:"D-row"},{k:"ヂ",r:"di",row:"D-row"},{k:"ヅ",r:"du",row:"D-row"},{k:"デ",r:"de",row:"D-row"},{k:"ド",r:"do",row:"D-row"},
+  {k:"バ",r:"ba",row:"B-row"},{k:"ビ",r:"bi",row:"B-row"},{k:"ブ",r:"bu",row:"B-row"},{k:"ベ",r:"be",row:"B-row"},{k:"ボ",r:"bo",row:"B-row"},
+  {k:"パ",r:"pa",row:"P-row"},{k:"ピ",r:"pi",row:"P-row"},{k:"プ",r:"pu",row:"P-row"},{k:"ペ",r:"pe",row:"P-row"},{k:"ポ",r:"po",row:"P-row"},
+];
+const VOCAB=[
+  {jp:"ありがとう",r:"arigatou",en:"Thank you"},{jp:"おはよう",r:"ohayou",en:"Good morning"},
+  {jp:"こんにちは",r:"konnichiwa",en:"Hello / Good afternoon"},{jp:"こんばんは",r:"konbanwa",en:"Good evening"},
+  {jp:"さようなら",r:"sayounara",en:"Goodbye"},{jp:"すみません",r:"sumimasen",en:"Excuse me / Sorry"},
+  {jp:"はい",r:"hai",en:"Yes"},{jp:"いいえ",r:"iie",en:"No"},
+  {jp:"わかりました",r:"wakarimashita",en:"I understand"},{jp:"わかりません",r:"wakarimasen",en:"I don't understand"},
+  {jp:"どこ",r:"doko",en:"Where"},{jp:"いくら",r:"ikura",en:"How much"},
+  {jp:"なに",r:"nani",en:"What"},{jp:"だれ",r:"dare",en:"Who"},
+  {jp:"いつ",r:"itsu",en:"When"},{jp:"なぜ",r:"naze",en:"Why"},
+  {jp:"たべもの",r:"tabemono",en:"Food"},{jp:"みず",r:"mizu",en:"Water"},
+  {jp:"トイレ",r:"toire",en:"Toilet / Bathroom"},{jp:"えき",r:"eki",en:"Train station"},
+  {jp:"でんしゃ",r:"densha",en:"Train"},{jp:"タクシー",r:"takushii",en:"Taxi"},
+  {jp:"ホテル",r:"hoteru",en:"Hotel"},{jp:"びょういん",r:"byouin",en:"Hospital"},
+  {jp:"いちにちいくら",r:"ichinichi ikura",en:"How much per day"},
+  {jp:"おいしい",r:"oishii",en:"Delicious"},{jp:"たかい",r:"takai",en:"Expensive"},
+  {jp:"やすい",r:"yasui",en:"Cheap"},{jp:"おおきい",r:"ookii",en:"Big"},
+  {jp:"ちいさい",r:"chiisai",en:"Small"},{jp:"あたらしい",r:"atarashii",en:"New"},
+  {jp:"ふるい",r:"furui",en:"Old"},{jp:"きれい",r:"kirei",en:"Beautiful / Clean"},
+  {jp:"しごと",r:"shigoto",en:"Work"},{jp:"かね",r:"kane",en:"Money"},
+  {jp:"ともだち",r:"tomodachi",en:"Friend"},{jp:"かぞく",r:"kazoku",en:"Family"},
+  {jp:"がっこう",r:"gakkou",en:"School"},{jp:"びょうき",r:"byouki",en:"Sick / Illness"},
+];
+
+const DEFAULT_GOALS=[
+  {id:1,text:"Study 10 kana characters",xp:20},
+  {id:2,text:"Complete 1 quiz session (10 questions)",xp:30},
+  {id:3,text:"Review 5 vocabulary words",xp:15},
+  {id:4,text:"Practice writing hiragana",xp:25},
+  {id:5,text:"Listen to 1 Japanese song / podcast",xp:10},
+];
+
+// ── STATE ───────────────────────────────────────────────────────────────────────
+function ls(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+let scores    = ls('hyk-jp-scores',{});
+let totalXp   = ls('hyk-jp-xp',0);
+let goalsDone = ls('hyk-jp-done',{});  // {date: {id:true}}
+let customGoals = ls('hyk-jp-custom',[]);
+let streak    = ls('hyk-jp-streak',{date:null,count:0});
+
+let quizSet='both', quizMode='hiragana'; // for kana page
+let quizPool=[], quizCurrent=null, quizOpts=[], quizAnswered=false;
+let quizSession={c:0,t:0};
+let vocabMode=false, vocabIdx=0, vocabPool=[];
+
+function todayStr(){return new Date().toISOString().slice(0,10)}
+
+function isMastered(kana){
+  const s=scores[kana];
+  return s && s.a>=5 && s.c/s.a>=0.75;
+}
+
+function updateStreak(){
+  const t=todayStr();
+  if(streak.date===t) return;
+  const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(streak.date===y){streak.count++;}
+  else{streak.count=1;}
+  streak.date=t;
+  lsSet('hyk-jp-streak',streak);
+}
+
+function addXp(n){
+  totalXp+=n;
+  lsSet('hyk-jp-xp',totalXp);
+  updateStreak();
+}
+
+function levelFromXp(xp){return Math.floor(Math.sqrt(xp/100))+1}
+function xpToNextLevel(xp){
+  const lv=levelFromXp(xp);
+  const needed=(lv*lv)*100;
+  const prev=((lv-1)*(lv-1))*100;
+  return {lv,pct:Math.round(((xp-prev)/(needed-prev))*100),cur:xp-prev,max:needed-prev};
+}
+
+// ── NAVIGATION ──────────────────────────────────────────────────────────────────
+let activePage='home';
+function nav(btn){
+  const p=btn.dataset.page;
+  if(p===activePage)return;
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  activePage=p;
+  if(p==='home')renderHome();
+  else if(p==='kana')renderKana();
+  else if(p==='quiz')renderQuiz();
+  else if(p==='goals')renderGoals();
+}
+
+// ── HOME ─────────────────────────────────────────────────────────────────────────
+function renderHome(){
+  const lvl=xpToNextLevel(totalXp);
+  const hi=HIRAGANA.filter(x=>isMastered(x.k)).length;
+  const ka=KATAKANA.filter(x=>isMastered(x.k)).length;
+  const hiPct=Math.round(hi/HIRAGANA.length*100);
+  const kaPct=Math.round(ka/KATAKANA.length*100);
+  const today=todayStr();
+  const done=goalsDone[today]||{};
+  const allGoals=[...DEFAULT_GOALS,...customGoals];
+  const doneCount=allGoals.filter(g=>done[g.id]).length;
+
+  document.getElementById('page-home').innerHTML=`
+  <div style="text-align:center;padding:18px 0 14px">
+    <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--mu);letter-spacing:.18em;margin-bottom:6px">HYK 日本語</div>
+    <div class="streak-big">${streak.count}🔥</div>
+    <div class="streak-sub">Day streak · ${streak.date===today?'Active today':'Start studying!'}</div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:11px;font-weight:700">Level ${lvl.lv}</span>
+      <span class="xp-badge">⚡ ${totalXp} XP</span>
+    </div>
+    <div class="prog" style="margin:0"><div class="progf" style="width:${lvl.pct}%;background:var(--gold)"></div></div>
+    <div style="font-size:9px;color:var(--mu);margin-top:4px;text-align:right">${lvl.cur} / ${lvl.max} XP to Level ${lvl.lv+1}</div>
+  </div>
+
+  <div class="card">
+    <div class="ct"><div class="ctd"></div>Kana Mastery</div>
+    <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+        <span>Hiragana</span><span style="color:var(--gold)">${hi}/${HIRAGANA.length} · ${hiPct}%</span>
+      </div>
+      <div class="prog"><div class="progf" style="width:${hiPct}%;background:var(--gold)"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+        <span>Katakana</span><span style="color:var(--cy)">${ka}/${KATAKANA.length} · ${kaPct}%</span>
+      </div>
+      <div class="prog"><div class="progf" style="width:${kaPct}%;background:var(--cy)"></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct"><div class="ctd" style="background:var(--gn)"></div>Today's Goals — ${doneCount}/${allGoals.length}</div>
+    <div class="prog"><div class="progf" style="width:${Math.round(doneCount/allGoals.length*100)}%;background:var(--gn)"></div></div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button onclick="document.querySelector('[data-page=quiz]').click()"
+        style="flex:1;padding:10px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:var(--rs);color:var(--gold);font-size:11px;font-weight:800;cursor:pointer">
+        🃏 Start Quiz
+      </button>
+      <button onclick="document.querySelector('[data-page=kana]').click()"
+        style="flex:1;padding:10px;background:rgba(0,207,255,.07);border:1px solid rgba(0,207,255,.2);border-radius:var(--rs);color:var(--cy);font-size:11px;font-weight:800;cursor:pointer">
+        ひ View Kana
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct"><div class="ctd" style="background:var(--pu)"></div>Stats</div>
+    <div class="stat-row"><span class="stat-label">Total XP earned</span><span class="stat-val">${totalXp}</span></div>
+    <div class="stat-row"><span class="stat-label">Hiragana mastered</span><span class="stat-val">${hi}/${HIRAGANA.length}</span></div>
+    <div class="stat-row"><span class="stat-label">Katakana mastered</span><span class="stat-val">${ka}/${KATAKANA.length}</span></div>
+    <div class="stat-row"><span class="stat-label">Day streak</span><span class="stat-val">${streak.count} 🔥</span></div>
+  </div>`;
+}
+
+// ── KANA ─────────────────────────────────────────────────────────────────────────
+let kanaTab='hiragana';
+function renderKana(){
+  const pool=kanaTab==='hiragana'?HIRAGANA:KATAKANA;
+  const byRow={};
+  for(const x of pool){if(!byRow[x.row])byRow[x.row]=[];byRow[x.row].push(x);}
+  const mastered=pool.filter(x=>isMastered(x.k)).length;
+  const pct=Math.round(mastered/pool.length*100);
+  document.getElementById('page-kana').innerHTML=`
+  <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--mu);letter-spacing:.15em;margin-bottom:12px;text-align:center">KANA CHART</div>
+  <div class="pill-row">
+    <button class="pill${kanaTab==='hiragana'?' active':''}" onclick="kanaTab='hiragana';renderKana()">ひ Hiragana</button>
+    <button class="pill${kanaTab==='katakana'?' active':''}" onclick="kanaTab='katakana';renderKana()">ア Katakana</button>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:5px">
+      <span>Mastery</span><span style="color:var(--gold)">${mastered}/${pool.length} · ${pct}%</span>
+    </div>
+    <div class="prog"><div class="progf" style="width:${pct}%;background:var(--gold)"></div></div>
+    <div style="font-size:9px;color:var(--mu);margin-top:5px">Gold border = mastered (75%+ accuracy, 5+ attempts)</div>
+  </div>
+  ${Object.entries(byRow).map(([row,cells])=>`
+    <div class="kana-row-label">${row}</div>
+    <div class="kana-row">${cells.map(x=>`
+      <div class="kana-cell${isMastered(x.k)?' mastered':''}">
+        <span class="kana-char">${x.k}</span>
+        <span class="kana-romaji">${x.r}</span>
+      </div>`).join('')}
+    </div>`).join('')}
+  <div style="height:20px"></div>`;
+}
+
+// ── QUIZ ──────────────────────────────────────────────────────────────────────────
+let qSet='both', qAnswered=false, qCurrent=null, qOpts=[], qSession={c:0,t:0};
+let qMode='kana'; // 'kana' | 'vocab'
+let vPool=[], vIdx=0;
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function getPool(){
+  if(qSet==='hiragana')return HIRAGANA;
+  if(qSet==='katakana')return KATAKANA;
+  return [...HIRAGANA,...KATAKANA];
+}
+
+function nextQuestion(){
+  const pool=getPool();
+  const weighted=[];
+  for(const x of pool){
+    const s=scores[x.k]||{c:0,a:0};
+    const acc=s.a?s.c/s.a:0;
+    const w=s.a<3?4:acc<0.75?3:1;
+    for(let i=0;i<w;i++)weighted.push(x);
+  }
+  qCurrent=weighted[Math.floor(Math.random()*weighted.length)];
+  const wrong=shuffle(pool.filter(x=>x.r!==qCurrent.r)).slice(0,3);
+  qOpts=shuffle([qCurrent,...wrong]);
+  qAnswered=false;
+  renderQuizCard();
+}
+
+function nextVocab(){
+  if(!vPool.length){vPool=shuffle([...VOCAB]);vIdx=0;}
+  if(vIdx>=vPool.length){vPool=shuffle([...VOCAB]);vIdx=0;}
+  renderVocabCard(vPool[vIdx]);
+}
+
+function renderQuiz(){
+  document.getElementById('page-quiz').innerHTML=`
+  <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--mu);letter-spacing:.15em;margin-bottom:12px;text-align:center">QUIZ MODE</div>
+  <div class="pill-row" style="margin-bottom:8px">
+    <button class="pill${qMode==='kana'?' active':''}" onclick="qMode='kana';renderQuiz()">Kana</button>
+    <button class="pill${qMode==='vocab'?' active':''}" onclick="qMode='vocab';vPool=[];renderQuiz()">Vocab</button>
+  </div>
+  <div id="quiz-content"></div>`;
+
+  if(qMode==='kana'){
+    document.getElementById('quiz-content').innerHTML=`
+    <div class="pill-row" style="margin-bottom:0">
+      <button class="pill${qSet==='hiragana'?' active':''}" onclick="qSet='hiragana';nextQuestion()">ひ</button>
+      <button class="pill${qSet==='katakana'?' active':''}" onclick="qSet='katakana';nextQuestion()">ア</button>
+      <button class="pill${qSet==='both'?' active':''}" onclick="qSet='both';nextQuestion()">Both</button>
+    </div>
+    <div id="quiz-card" class="quiz-wrap"></div>`;
+    nextQuestion();
+  } else {
+    document.getElementById('quiz-content').innerHTML=`<div id="vocab-card" class="quiz-wrap"></div>`;
+    vPool=shuffle([...VOCAB]); vIdx=0;
+    nextVocab();
+  }
+}
+
+function renderQuizCard(){
+  if(!qCurrent)return;
+  const el=document.getElementById('quiz-card');
+  if(!el)return;
+  el.innerHTML=`
+  <div class="quiz-stats">
+    <span>✓ <b>${qSession.c}</b></span>
+    <span>Total <b>${qSession.t}</b></span>
+    <span>Accuracy <b>${qSession.t?Math.round(qSession.c/qSession.t*100):0}%</b></span>
+  </div>
+  <div class="quiz-display">${qCurrent.k}</div>
+  <div class="quiz-question">What is the reading of this kana?</div>
+  <div class="quiz-opts">
+    ${qOpts.map(o=>`<button class="qopt" onclick="answerQ('${o.r}')" id="qopt-${o.r.replace(/[^a-z]/g,'')}">${o.r}</button>`).join('')}
+  </div>
+  <div class="quiz-feedback" id="qfeed"></div>
+  <button class="skip-btn" onclick="nextQuestion()">Skip →</button>`;
+}
+
+function answerQ(r){
+  if(qAnswered)return;
+  qAnswered=true;
+  const correct=r===qCurrent.r;
+  qSession.t++;
+  if(correct)qSession.c++;
+
+  // Update scores
+  const s=scores[qCurrent.k]||{c:0,a:0};
+  s.a++; if(correct)s.c++;
+  scores[qCurrent.k]=s;
+  lsSet('hyk-jp-scores',scores);
+
+  if(correct){addXp(5);}
+
+  // Highlight buttons
+  qOpts.forEach(o=>{
+    const id='qopt-'+o.r.replace(/[^a-z]/g,'');
+    const btn=document.getElementById(id);
+    if(!btn)return;
+    if(o.r===qCurrent.r){btn.classList.add('correct');}
+    else if(o.r===r&&!correct){btn.classList.add('wrong');}
+    else{btn.style.opacity='.35';}
+    btn.disabled=true;
+  });
+
+  const feed=document.getElementById('qfeed');
+  if(feed)feed.innerHTML=correct
+    ?`<span style="color:var(--gn)">✓ Correct! +5 XP</span>`
+    :`<span style="color:var(--rd)">✗ It was "${qCurrent.r}"</span>`;
+
+  setTimeout(()=>nextQuestion(),1300);
+}
+
+function renderVocabCard(v){
+  const el=document.getElementById('vocab-card');
+  if(!el)return;
+  const wrongPool=shuffle(VOCAB.filter(x=>x.en!==v.en));
+  const wrong=wrongPool.slice(0,3);
+  const opts=shuffle([v,...wrong]);
+  let answered=false;
+
+  el.innerHTML=`
+  <div style="text-align:center;padding:10px 0 6px">
+    <div style="font-size:11px;color:var(--mu);margin-bottom:6px">What does this mean?</div>
+    <div style="font-size:42px;font-weight:800;margin-bottom:4px">${v.jp}</div>
+    <div style="font-size:14px;color:var(--mu);margin-bottom:20px">${v.r}</div>
+  </div>
+  <div class="quiz-opts">
+    ${opts.map(o=>`<button class="qopt" style="font-size:12px" id="vopt-${o.en.replace(/[^a-zA-Z]/g,'_')}"
+      onclick="answerV(this,'${o.en}','${v.en}')">${o.en}</button>`).join('')}
+  </div>
+  <div class="quiz-feedback" id="vfeed"></div>
+  <button class="skip-btn" onclick="vIdx++;nextVocab()">Next →</button>`;
+}
+
+function answerV(btn,chosen,correct){
+  if(btn.disabled)return;
+  document.querySelectorAll('.qopt').forEach(b=>b.disabled=true);
+  const isCorrect=chosen===correct;
+  if(isCorrect){btn.classList.add('correct');addXp(3);}
+  else{
+    btn.classList.add('wrong');
+    document.querySelectorAll('.qopt').forEach(b=>{if(b.textContent===correct)b.classList.add('reveal');});
+  }
+  const feed=document.getElementById('vfeed');
+  if(feed)feed.innerHTML=isCorrect
+    ?`<span style="color:var(--gn)">✓ Correct! +3 XP</span>`
+    :`<span style="color:var(--rd)">✗ It was "${correct}"</span>`;
+  setTimeout(()=>{vIdx++;nextVocab();},1300);
+}
+
+// ── GOALS ─────────────────────────────────────────────────────────────────────────
+function renderGoals(){
+  const today=todayStr();
+  const done=goalsDone[today]||{};
+  const allGoals=[...DEFAULT_GOALS,...customGoals];
+
+  document.getElementById('page-goals').innerHTML=`
+  <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--mu);letter-spacing:.15em;margin-bottom:14px;text-align:center">TODAY'S GOALS</div>
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:6px">
+      <span>Progress</span>
+      <span style="color:var(--gn)">${allGoals.filter(g=>done[g.id]).length}/${allGoals.length} done</span>
+    </div>
+    <div class="prog"><div class="progf" style="width:${Math.round(allGoals.filter(g=>done[g.id]).length/allGoals.length*100)||0}%;background:var(--gn)"></div></div>
+  </div>
+  ${allGoals.map(g=>`
+  <div class="goal-item${done[g.id]?' done':''}" onclick="toggleGoal(${g.id})">
+    <div class="goal-check">${done[g.id]?'✓':''}</div>
+    <span class="goal-text">${g.text}</span>
+    <span class="goal-xp">+${g.xp}XP</span>
+  </div>`).join('')}
+  <div class="add-goal-row">
+    <input class="add-goal-inp" id="new-goal-inp" placeholder="Add custom goal…" maxlength="60"
+      onkeydown="if(event.key==='Enter')addCustomGoal()">
+    <button class="add-goal-btn" onclick="addCustomGoal()">+</button>
+  </div>
+  ${customGoals.length?`<button onclick="clearCustomGoals()" style="margin-top:8px;width:100%;padding:7px;background:none;border:1px solid rgba(255,51,85,.2);border-radius:var(--rs);color:rgba(255,51,85,.5);font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.05em">Clear Custom Goals</button>`:''}`;
+}
+
+function toggleGoal(id){
+  const today=todayStr();
+  if(!goalsDone[today])goalsDone[today]={};
+  const wasDone=goalsDone[today][id];
+  goalsDone[today][id]=!wasDone;
+  lsSet('hyk-jp-done',goalsDone);
+
+  // XP on completion
+  if(!wasDone){
+    const g=[...DEFAULT_GOALS,...customGoals].find(x=>x.id===id);
+    if(g)addXp(g.xp);
+  }
+  renderGoals();
+}
+
+function addCustomGoal(){
+  const inp=document.getElementById('new-goal-inp');
+  const text=inp?.value?.trim();
+  if(!text)return;
+  const id=Date.now();
+  customGoals.push({id,text,xp:15});
+  lsSet('hyk-jp-custom',customGoals);
+  inp.value='';
+  renderGoals();
+}
+
+function clearCustomGoals(){
+  customGoals=[];
+  lsSet('hyk-jp-custom',[]);
+  renderGoals();
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────────
+updateStreak();
+renderHome();
+</script>
+</body>
+</html>

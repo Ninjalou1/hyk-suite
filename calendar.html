@@ -253,22 +253,33 @@ option{background:var(--s2)}
   .wk-allday{background:#f9f9f9!important}
 }
 @media(max-width:680px){
-  /* Header */
-  .hdr{flex-wrap:wrap;height:auto;padding:8px 12px;gap:8px}
-  .hdr-nav{order:2}
-  .hdr-period{min-width:0;font-size:13px;order:2}
-  .view-tabs{order:3;width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  body,html{overflow-x:hidden}
+  /* Header — wrap to 2 rows */
+  .hdr{flex-wrap:wrap;height:auto;padding:8px 10px;gap:7px;min-width:0}
+  .hdr-logo{font-size:13px;flex-shrink:1;min-width:0}
+  .hdr-nav{flex-shrink:0;gap:4px}
+  .hdr-period{min-width:0!important;font-size:12px;text-align:center}
+  .icon-btn{width:26px;height:26px}
+  .view-tabs{order:3;width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-shrink:0}
   .view-tabs::-webkit-scrollbar{display:none}
-  .view-tab{font-size:9px;padding:4px 10px}
+  .view-tab{font-size:9px;padding:4px 9px}
+  .add-btn{padding:6px 10px}
   .add-btn span{display:none}
   .clock{display:none}
-  /* Hide sidebar on mobile — show main calendar full width */
-  .sidebar{display:none}
-  .content{flex-direction:column}
-  /* Calendar grid cells — allow vertical scroll */
-  .mc{min-height:44px}
-  .ep{font-size:8.5px}
-  body{overflow-x:hidden}
+  /* Hide sidebar, full-width main */
+  .sidebar{display:none!important}
+  .content{overflow-x:hidden}
+  /* Month view cells */
+  .mc{min-height:40px;padding:3px}
+  .ep{font-size:8px}
+  .dn{font-size:10px}
+  /* Week view — force horizontal scroll rather than cutoff */
+  .wv,.dv{padding:6px}
+  .wv-body{overflow-x:auto}
+  .wv-inner,.wv-head,.wv-allday{min-width:480px}
+  .wv-dnum{font-size:16px}
+  .filter-bar{flex-wrap:wrap;gap:5px;padding:6px 10px}
+  .fchip{font-size:9px;padding:2px 8px}
 }
 </style>
 </head>

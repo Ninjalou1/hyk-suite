@@ -1,8 +1,9 @@
-const CACHE = 'hyk-suite-v1';
+const CACHE = 'hyk-suite-v2';
 const SHELL = [
   './index.html',
   './budget.html',
   './calendar.html',
+  './japanese.html',
   './manifest.json',
   './icon.svg'
 ];
