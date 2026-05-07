@@ -16,66 +16,48 @@
 html,body{height:100%;background:#0a0a1a;overflow:hidden;font-family:'Inter',system-ui,sans-serif}
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh}
 #frames{flex:1;position:relative;overflow:hidden}
-iframe{
-  position:absolute;inset:0;width:100%;height:100%;
-  border:none;display:none;background:#0a0a1a
-}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:none;background:#0a0a1a}
 iframe.active{display:block}
+#jp-screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px;gap:20px;background:#0a0a1a;overflow-y:auto}
+#jp-screen.active{display:flex}
 
-/* ── Splash screen ── */
-#splash{
-  position:fixed;inset:0;z-index:999;
-  background:#0a0a1a;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:20px;transition:opacity .4s ease
-}
+/* Splash */
+#splash{position:fixed;inset:0;z-index:999;background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .4s ease}
 #splash.hidden{opacity:0;pointer-events:none}
 #splash svg{width:96px;height:96px;filter:drop-shadow(0 0 18px rgba(201,168,76,.4))}
-#splash h1{
-  font-size:32px;font-weight:800;letter-spacing:.14em;
-  background:linear-gradient(135deg,#F0D570,#C9A84C,#A87832);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text
-}
+#splash h1{font-size:32px;font-weight:800;letter-spacing:.14em;background:linear-gradient(135deg,#F0D570,#C9A84C,#A87832);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 #splash p{font-size:12px;color:rgba(201,168,76,.4);letter-spacing:.25em;text-transform:uppercase}
 
-/* ── Bottom nav ── */
-nav{
-  display:flex;
-  background:#0d0d22;
-  border-top:1px solid rgba(201,168,76,.18);
-  padding-bottom:env(safe-area-inset-bottom,0px)
-}
-nav button{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:10px 4px 8px;background:none;border:none;cursor:pointer;gap:4px;
-  transition:background .15s;-webkit-tap-highlight-color:transparent;
-  position:relative
-}
+/* Bottom nav */
+nav{display:flex;background:#0d0d22;border-top:1px solid rgba(201,168,76,.18);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;background:none;border:none;cursor:pointer;gap:4px;transition:background .15s;-webkit-tap-highlight-color:transparent;position:relative}
 nav button:active{background:rgba(201,168,76,.06)}
-.nav-icon{font-size:22px;line-height:1;transition:filter .2s}
-.nav-label{
-  font-size:10px;letter-spacing:.06em;color:rgba(255,255,255,.3);
-  text-transform:uppercase;font-weight:700;transition:color .2s
-}
+.nav-icon{font-size:20px;line-height:1;transition:filter .2s}
+.nav-label{font-size:9px;letter-spacing:.05em;color:rgba(255,255,255,.3);text-transform:uppercase;font-weight:700;transition:color .2s}
 nav button.active .nav-label{color:#C9A84C}
 nav button.active .nav-icon{filter:drop-shadow(0 0 6px rgba(201,168,76,.7))}
-nav button.active::after{
-  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:32px;height:2px;background:#C9A84C;border-radius:0 0 2px 2px
-}
+nav button.active::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:#C9A84C;border-radius:0 0 2px 2px}
 
-/* ── Loading indicator shown in frame area while tab loads ── */
-.frame-loader{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:14px;color:rgba(201,168,76,.4);
-  font-size:13px;letter-spacing:.08em;text-transform:uppercase;
-  pointer-events:none
-}
-.spinner{
-  width:32px;height:32px;border:2px solid rgba(201,168,76,.12);
-  border-top-color:#C9A84C;border-radius:50%;animation:spin .8s linear infinite
-}
+/* Loaders */
+.frame-loader{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:rgba(201,168,76,.4);font-size:13px;letter-spacing:.08em;text-transform:uppercase;pointer-events:none}
+.spinner{width:32px;height:32px;border:2px solid rgba(201,168,76,.12);border-top-color:#C9A84C;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* Japanese connect screen */
+.jp-logo{font-size:52px;line-height:1}
+.jp-title{font-size:22px;font-weight:800;color:#C9A84C;letter-spacing:.1em}
+.jp-sub{font-size:13px;color:rgba(255,255,255,.45);text-align:center;line-height:1.6;max-width:300px}
+.jp-card{width:100%;max-width:340px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.jp-card label{font-size:11px;font-weight:700;color:rgba(201,168,76,.7);letter-spacing:.08em;text-transform:uppercase}
+.jp-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(201,168,76,.25);border-radius:8px;padding:11px 14px;color:#fff;font-size:15px;font-family:monospace;outline:none;transition:border-color .2s}
+.jp-input:focus{border-color:#C9A84C}
+.jp-input::placeholder{color:rgba(255,255,255,.2)}
+.jp-btn{width:100%;padding:13px;background:linear-gradient(135deg,#C9A84C,#A87832);border:none;border-radius:8px;color:#0a0a1a;font-size:13px;font-weight:900;letter-spacing:.08em;cursor:pointer;transition:opacity .15s}
+.jp-btn:active{opacity:.8}
+.jp-hint{font-size:11px;color:rgba(255,255,255,.3);text-align:center;line-height:1.5}
+.jp-steps{font-size:11px;color:rgba(255,255,255,.35);line-height:1.8;list-style:none;counter-reset:s}
+.jp-steps li{counter-increment:s;display:flex;gap:8px;align-items:flex-start}
+.jp-steps li::before{content:counter(s);min-width:18px;height:18px;background:rgba(201,168,76,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#C9A84C;margin-top:1px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -106,19 +88,41 @@ nav button.active::after{
 
 <div id="app">
   <div id="frames">
-    <div class="frame-loader" id="loader-budget">
-      <div class="spinner"></div>Loading Budget…
-    </div>
-    <div class="frame-loader" id="loader-intel" style="display:none">
-      <div class="spinner"></div>Loading Intel…
-    </div>
-    <div class="frame-loader" id="loader-calendar" style="display:none">
-      <div class="spinner"></div>Loading Calendar…
-    </div>
+    <div class="frame-loader" id="loader-budget"><div class="spinner"></div>Loading Budget…</div>
+    <div class="frame-loader" id="loader-intel" style="display:none"><div class="spinner"></div>Loading Intel…</div>
+    <div class="frame-loader" id="loader-calendar" style="display:none"><div class="spinner"></div>Loading Calendar…</div>
 
-    <iframe id="frame-budget"   src="budget.html"   title="HYK Budget"></iframe>
+    <iframe id="frame-budget"   src="budget.html" title="HYK Budget"></iframe>
     <iframe id="frame-intel"    title="HYK Intel"></iframe>
     <iframe id="frame-calendar" title="HYK Calendar"></iframe>
+
+    <!-- Japanese connect screen -->
+    <div id="jp-screen">
+      <div class="jp-logo">🇯🇵</div>
+      <div class="jp-title">HYK 日本語</div>
+      <div class="jp-sub">This app runs on your Steam Deck. Connect while on the same Wi-Fi network.</div>
+
+      <div class="jp-card">
+        <label>Steam Deck IP Address</label>
+        <input class="jp-input" id="jp-ip" type="text" inputmode="decimal"
+          placeholder="e.g. 192.168.1.42" autocomplete="off" spellcheck="false">
+        <button class="jp-btn" onclick="jpConnect()">Connect →</button>
+      </div>
+
+      <div class="jp-hint">
+        Your IP is saved — next time it connects automatically.<br>
+        Tap <strong style="color:#C9A84C">Connect</strong> to launch the app in this tab.
+      </div>
+
+      <ul class="jp-steps">
+        <li>On Steam Deck, open a terminal and run: <code style="color:#C9A84C;background:rgba(201,168,76,.1);padding:1px 5px;border-radius:3px">ip a | grep 192</code></li>
+        <li>Copy the IP address (looks like 192.168.x.x)</li>
+        <li>Make sure the Japanese app is running on Steam Deck</li>
+        <li>Enter the IP above and tap Connect</li>
+      </ul>
+    </div>
+
+    <iframe id="frame-japanese" title="HYK Japanese"></iframe>
   </div>
 
   <nav>
@@ -134,12 +138,16 @@ nav button.active::after{
       <span class="nav-icon">📅</span>
       <span class="nav-label">Calendar</span>
     </button>
+    <button data-tab="japanese" onclick="switchTab(this)">
+      <span class="nav-icon">🇯🇵</span>
+      <span class="nav-label">Japanese</span>
+    </button>
   </nav>
 </div>
 
 <script>
 const SRCS = { budget: 'budget.html', intel: 'intel.html', calendar: 'calendar.html' };
-const loaded = { budget: false, intel: false, calendar: false };
+const loaded = { budget: false, intel: false, calendar: false, japanese: false };
 let active = 'budget';
 
 function switchTab(btn) {
@@ -148,40 +156,74 @@ function switchTab(btn) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 
-  document.getElementById('frame-' + active).classList.remove('active');
+  // Hide previous
+  if (active === 'japanese') {
+    document.getElementById('jp-screen').classList.remove('active');
+    document.getElementById('frame-japanese').classList.remove('active');
+  } else {
+    document.getElementById('frame-' + active).classList.remove('active');
+  }
   active = tab;
 
-  const frame = document.getElementById('frame-' + tab);
-  frame.classList.add('active');
-
-  if (!loaded[tab]) {
-    loaded[tab] = true;
-    document.getElementById('loader-' + tab).style.display = 'flex';
-    frame.src = SRCS[tab];
-    frame.onload = () => { document.getElementById('loader-' + tab).style.display = 'none'; };
+  if (tab === 'japanese') {
+    const savedIP = localStorage.getItem('hyk-jp-ip');
+    if (savedIP && loaded.japanese) {
+      document.getElementById('frame-japanese').classList.add('active');
+    } else if (savedIP && !loaded.japanese) {
+      jpLaunch(savedIP);
+    } else {
+      document.getElementById('jp-screen').classList.add('active');
+      if (savedIP) document.getElementById('jp-ip').value = savedIP;
+    }
+  } else {
+    const frame = document.getElementById('frame-' + tab);
+    frame.classList.add('active');
+    if (!loaded[tab]) {
+      loaded[tab] = true;
+      document.getElementById('loader-' + tab).style.display = 'flex';
+      frame.src = SRCS[tab];
+      frame.onload = () => { document.getElementById('loader-' + tab).style.display = 'none'; };
+    }
   }
 }
 
-// Budget loads immediately — hide its loader once ready
+function jpConnect() {
+  const ip = document.getElementById('jp-ip').value.trim();
+  if (!ip) return;
+  localStorage.setItem('hyk-jp-ip', ip);
+  jpLaunch(ip);
+}
+
+function jpLaunch(ip) {
+  document.getElementById('jp-screen').classList.remove('active');
+  const frame = document.getElementById('frame-japanese');
+  frame.classList.add('active');
+  if (!loaded.japanese) {
+    loaded.japanese = true;
+    frame.src = 'http://' + ip + ':5173';
+  }
+}
+
+// Budget loads immediately
 document.getElementById('frame-budget').classList.add('active');
 document.getElementById('frame-budget').onload = () => {
   loaded.budget = true;
   document.getElementById('loader-budget').style.display = 'none';
-  // Hide splash after first frame loads
   document.getElementById('splash').classList.add('hidden');
   setTimeout(() => document.getElementById('splash').remove(), 500);
 };
 
-// Fallback: hide splash after 3s regardless
+// Fallback: hide splash after 3s
 setTimeout(() => {
   const s = document.getElementById('splash');
   if (s) { s.classList.add('hidden'); setTimeout(() => s.remove(), 500); }
 }, 3000);
 
-// Service worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
-}
+// Pre-fill saved IP
+const savedIP = localStorage.getItem('hyk-jp-ip');
+if (savedIP) document.getElementById('jp-ip').value = savedIP;
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 </script>
 </body>
 </html>
