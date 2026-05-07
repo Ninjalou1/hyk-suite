@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HYK — Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06060F;--s1:#0C0C1E;--s2:#111128;--s3:#161630;
+  --gold:#C9A84C;--gold2:#E8C568;
+  --text:#F0EDE8;--muted:rgba(240,237,232,.5);--dim:rgba(240,237,232,.12);--border:rgba(240,237,232,.07);
+  --green:#00C9A7;--red:#FF5050;--blue:#5B9EFF;--orange:#FF8C42;--pink:#FF6B9D;
+  --r:14px;--r-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;height:100vh;overflow:hidden;font-size:13px}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* ── Header ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;gap:16px}
+.hdr-logo{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--gold);letter-spacing:.12em;white-space:nowrap}
+.hdr-logo span{font-family:'Inter',sans-serif;font-size:10px;font-weight:500;color:var(--muted);margin-left:8px;letter-spacing:.04em}
+.view-tabs{display:flex;gap:3px;background:var(--s2);padding:3px;border-radius:var(--r-sm)}
+.vtab{padding:5px 14px;border:none;background:none;color:var(--muted);font-size:10px;font-weight:800;cursor:pointer;border-radius:6px;letter-spacing:.07em;text-transform:uppercase;transition:all .15s;display:flex;align-items:center;gap:5px}
+.vtab.active{background:var(--gold);color:var(--bg)}
+.hdr-date{font-size:11px;color:var(--muted);white-space:nowrap}
+.notif-dot{width:7px;height:7px;background:var(--red);border-radius:50%;display:inline-block;flex-shrink:0}
+
+/* ── Main ── */
+.main{flex:1;overflow-y:auto;padding:20px;display:grid;gap:16px;align-content:start}
+.main.view-dashboard{grid-template-columns:repeat(3,1fr)}
+.main.view-subscriptions{grid-template-columns:1fr}
+.main.view-savings{grid-template-columns:1fr 1fr}
+
+/* ── Cards ── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.card-title{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.card-xl{font-family:'Orbitron',monospace;font-size:26px;font-weight:900}
+.card-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:.04em;white-space:nowrap}
+.badge-red{background:rgba(255,80,80,.14);color:#FF5050;border:1px solid rgba(255,80,80,.28)}
+.badge-orange{background:rgba(255,140,66,.14);color:#FF8C42;border:1px solid rgba(255,140,66,.28)}
+.badge-green{background:rgba(0,201,167,.14);color:#00C9A7;border:1px solid rgba(0,201,167,.28)}
+.badge-gold{background:rgba(201,168,76,.14);color:var(--gold);border:1px solid rgba(201,168,76,.28)}
+
+/* ── Progress ── */
+.prog-track{height:7px;background:var(--s2);border-radius:4px;overflow:hidden;margin:6px 0}
+.prog-fill{height:100%;border-radius:4px;transition:width .4s ease}
+
+/* ── Subscription rows ── */
+.sub-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.sub-row:last-child{border-bottom:none}
+.sub-icon{width:34px;height:34px;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sub-name{font-weight:700;font-size:12px;line-height:1.3}
+.sub-meta{font-size:10px;color:var(--muted);margin-top:1px}
+.sub-amount{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;margin-left:auto;flex-shrink:0}
+.sub-actions{display:flex;gap:5px;margin-left:10px;flex-shrink:0}
+.ibtn{width:26px;height:26px;border:1px solid var(--border);background:none;border-radius:6px;color:var(--muted);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.ibtn:hover{border-color:var(--muted);color:var(--text)}
+
+/* ── Buttons ── */
+.add-btn{padding:7px 14px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.35);border-radius:var(--r-sm);color:var(--gold);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.06em;transition:all .15s;white-space:nowrap}
+.add-btn:hover{background:rgba(201,168,76,.2);border-color:var(--gold)}
+.pdf-btn{padding:7px 12px;background:rgba(91,158,255,.08);border:1px solid rgba(91,158,255,.3);border-radius:var(--r-sm);color:var(--blue);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:all .15s}
+.pdf-btn:hover{background:rgba(91,158,255,.15);border-color:var(--blue)}
+
+/* ── Log rows ── */
+.log-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px}
+.log-row:last-child{border-bottom:none}
+.log-month{color:var(--muted);width:56px;flex-shrink:0;font-size:10px}
+.log-bar-wrap{flex:1;height:5px;background:var(--s2);border-radius:3px;overflow:hidden}
+.log-bar{height:100%;border-radius:3px;transition:width .3s}
+.log-amt{font-family:'Orbitron',monospace;font-size:10px;width:65px;text-align:right;flex-shrink:0}
+
+/* ── Alloc rows ── */
+.alloc-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.alloc-icon{font-size:18px;width:30px;text-align:center;flex-shrink:0}
+.alloc-name{font-size:11px;font-weight:700;margin-bottom:3px}
+
+/* ── Ring ── */
+.ring-wrap{display:flex;align-items:center;gap:18px}
+.ring-lbl{font-size:10px;color:var(--muted);margin-bottom:2px}
+.ring-val{font-family:'Orbitron',monospace;font-size:19px;font-weight:900;color:var(--green)}
+
+/* ── Income input ── */
+.income-edit{display:flex;align-items:baseline;gap:4px}
+.income-sym{font-family:'Orbitron',monospace;font-size:16px;color:var(--muted)}
+.income-num{background:none;border:none;border-bottom:1px solid var(--dim);color:var(--text);font-family:'Orbitron',monospace;font-size:26px;font-weight:900;width:130px;outline:none;padding-bottom:2px;-moz-appearance:textfield}
+.income-num:focus{border-bottom-color:var(--gold)}
+.income-num::-webkit-outer-spin-button,.income-num::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:26px;width:430px;max-width:92vw}
+.modal-title{font-size:13px;font-weight:800;margin-bottom:18px;letter-spacing:.04em}
+.fg{margin-bottom:12px}
+.fl{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:block}
+.fi{width:100%;padding:9px 12px;background:var(--s2);border:1px solid var(--dim);border-radius:var(--r-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:12px;outline:none;transition:border .15s}
+.fi:focus{border-color:rgba(201,168,76,.5)}
+.frow{display:flex;gap:10px}
+.frow .fg{flex:1}
+.m-foot{display:flex;gap:8px;margin-top:18px;justify-content:flex-end;align-items:center}
+.m-del{padding:7px 14px;background:rgba(255,60,60,.1);border:1px solid rgba(255,60,60,.3);border-radius:var(--r-sm);color:#FF5050;font-size:10px;font-weight:800;cursor:pointer;margin-right:auto}
+.m-cancel{padding:7px 14px;background:var(--s2);border:1px solid var(--dim);border-radius:var(--r-sm);color:var(--muted);font-size:10px;font-weight:800;cursor:pointer}
+.m-save{padding:7px 20px;background:var(--gold);border:none;border-radius:var(--r-sm);color:var(--bg);font-size:10px;font-weight:900;cursor:pointer}
+.cblabel{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:var(--text)}
+.cblabel input{accent-color:var(--gold)}
+
+/* ── Alert box ── */
+.alert-box{background:rgba(255,80,80,.05);border:1px solid rgba(255,80,80,.15);border-radius:var(--r-sm);padding:11px 14px;margin-bottom:14px}
+.alert-hd{font-size:9px;font-weight:800;letter-spacing:.1em;color:#FF5050;text-transform:uppercase;margin-bottom:7px}
+
+/* ── Gap pill ── */
+.gap-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,140,66,.08);color:#FF8C42;border:1px solid rgba(255,140,66,.2)}
+.on-track{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,201,167,.08);color:var(--green);border:1px solid rgba(0,201,167,.2)}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--dim);border-radius:2px}
+
+/* ── Divider ── */
+.div{height:1px;background:var(--border);margin:12px 0}
+
+/* ── Print ── */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @page{size:A4;margin:12mm}
+  body{background:#fff!important;overflow:visible!important}
+  #app{height:auto!important;overflow:visible!important}
+  .hdr{background:#f4f4f4!important;border-bottom:1px solid #ccc!important;-webkit-print-color-adjust:exact!important}
+  .hdr-logo{color:#222!important}.hdr-logo span{color:#666!important}
+  .view-tabs,.add-btn,.pdf-btn,.ibtn,.m-foot{display:none!important}
+  .main{overflow:visible!important;display:block!important;padding:12px!important}
+  .card{background:#fff!important;border:1px solid #ddd!important;margin-bottom:14px!important;break-inside:avoid;page-break-inside:avoid}
+  .card-xl,.sub-amount,.ring-val,.log-amt,.alloc-val{color:#000!important}
+  .card-title,.card-sub,.sub-meta,.ring-lbl,.log-month,.muted{color:#666!important}
+  .prog-track{background:#eee!important}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const DEFAULTS = {
+  income: 2208,
+  rent: 500,
+  allocGold: 110,
+  allocStocks: 110,
+  goal: 20000,
+  subscriptions: [
+    { id:'sub1', name:'Adobe Creative Cloud', icon:'🎨', amount:27, dueDay:1,  isTrial:false, trialEnd:'', active:true },
+    { id:'sub2', name:'iCloud Storage',        icon:'☁️', amount:5,  dueDay:15, isTrial:false, trialEnd:'', active:true },
+    { id:'sub3', name:'Streaming Service',     icon:'📺', amount:15, dueDay:20, isTrial:false, trialEnd:'', active:true },
+    { id:'sub4', name:'Gym / Training',        icon:'💪', amount:50, dueDay:25, isTrial:false, trialEnd:'', active:true },
+  ],
+  monthlyLog: [],
+};
+
+let state = (() => {
+  try {
+    const raw = localStorage.getItem('hyk_budget');
+    if (raw) return { view:'dashboard', ...DEFAULTS, ...JSON.parse(raw) };
+  } catch(e) {}
+  return { view:'dashboard', ...DEFAULTS };
+})();
+
+let modal = null;
+
+function save() {
+  const { view, ...rest } = state;
+  localStorage.setItem('hyk_budget', JSON.stringify(rest));
+}
+
+// ── Compute ────────────────────────────────────────────────────────────────────
+function calc() {
+  const subTotal   = state.subscriptions.filter(s => s.active).reduce((a,s) => a + s.amount, 0);
+  const expenses   = state.rent + subTotal;
+  const surplus    = state.income - expenses;
+  const allocTotal = state.allocGold + state.allocStocks;
+  const available  = surplus - allocTotal;
+  const rate       = state.income > 0 ? Math.round(surplus / state.income * 100) : 0;
+  const annualProj = available * 12;
+  const gap        = state.goal - annualProj;
+  const totalSaved = state.monthlyLog.reduce((a,m) => a + m.amount, 0);
+  return { subTotal, expenses, surplus, allocTotal, available, rate, annualProj, gap, totalSaved };
+}
+
+// ── Sub alerts ─────────────────────────────────────────────────────────────────
+function daysUntilDue(sub) {
+  const now = new Date();
+  const due = new Date(now.getFullYear(), now.getMonth(), sub.dueDay);
+  if (due <= now) due.setMonth(due.getMonth() + 1);
+  return Math.ceil((due - now) / 86400000);
+}
+function daysUntilTrialEnd(sub) {
+  if (!sub.isTrial || !sub.trialEnd) return null;
+  return Math.ceil((new Date(sub.trialEnd) - new Date()) / 86400000);
+}
+function subAlert(sub) {
+  if (!sub.active) return null;
+  const td = daysUntilTrialEnd(sub);
+  if (td !== null) {
+    if (td <= 0)  return { level:'red',    text:'Trial ended' };
+    if (td <= 3)  return { level:'red',    text:`Trial ends ${td}d` };
+    if (td <= 14) return { level:'orange', text:`Trial ends ${td}d` };
+  }
+  const dd = daysUntilDue(sub);
+  if (dd <= 2) return { level:'red',    text:`Due in ${dd}d` };
+  if (dd <= 7) return { level:'orange', text:`Due in ${dd}d` };
+  return null;
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────────
+function render() {
+  const c = calc();
+  const alertCount = state.subscriptions.filter(s => subAlert(s)).length;
+  const today = new Date();
+
+  document.getElementById('app').innerHTML = `
+  <div class="hdr">
+    <div class="hdr-logo">HYK <span>Budget Tracker</span></div>
+    <div class="view-tabs">
+      <button class="vtab${state.view==='dashboard'?' active':''}" data-view="dashboard">Dashboard</button>
+      <button class="vtab${state.view==='subscriptions'?' active':''}" data-view="subscriptions">
+        Subscriptions${alertCount?` <span class="notif-dot"></span>`:''}
+      </button>
+      <button class="vtab${state.view==='savings'?' active':''}" data-view="savings">Savings</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="pdf-btn" id="print-btn">📄 Export</button>
+      <div class="hdr-date">${today.toLocaleDateString('en-CA',{month:'long',year:'numeric'})}</div>
+    </div>
+  </div>
+  <div class="main view-${state.view}" id="main">
+    ${ state.view==='dashboard'     ? buildDashboard(c)     :
+       state.view==='subscriptions' ? buildSubscriptions(c) :
+                                      buildSavings(c) }
+  </div>
+  ${ modal ? buildModal() : '' }`;
+
+  bindInputs();
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────────
+function buildDashboard(c) {
+  const circ = 2 * Math.PI * 42;
+  const off  = circ - (Math.min(c.rate,100) / 100) * circ;
+  const rateColor = c.rate >= 65 ? 'var(--green)' : c.rate >= 40 ? 'var(--gold)' : 'var(--red)';
+
+  return `
+  <!-- Income card -->
+  <div class="card">
+    <div class="card-title">Monthly Income</div>
+    <div class="income-edit">
+      <span class="income-sym">$</span>
+      <input class="income-num" id="income-in" type="number" value="${state.income}" min="0">
+    </div>
+    <div class="card-sub">CAD · tap to edit</div>
+    <div class="div"></div>
+    <div style="font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Work Schedule</div>
+    <div style="display:flex;flex-direction:column;gap:5px;font-size:10px;color:var(--muted);line-height:1.5">
+      <div>Fri <span style="color:var(--text);font-weight:600">4 pm – 2 am</span></div>
+      <div>Sat &amp; Sun <span style="color:var(--text);font-weight:600">4 pm – 12 am</span></div>
+      <div style="margin-top:4px">$21 base → $21–$31/hr with tips</div>
+    </div>
+  </div>
+
+  <!-- Expenses card -->
+  <div class="card">
+    <div class="card-title">Monthly Expenses</div>
+    <div class="card-xl" style="color:var(--red)">$${c.expenses.toLocaleString()}</div>
+    <div class="card-sub">${Math.round(c.expenses/state.income*100)}% of income</div>
+    <div class="div"></div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;justify-content:space-between;font-size:11px">
+        <span style="color:var(--muted)">Rent</span>
+        <span style="font-weight:700">$${state.rent}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px">
+        <span style="color:var(--muted)">Subscriptions (${state.subscriptions.filter(s=>s.active).length})</span>
+        <span style="font-weight:700">$${c.subTotal}</span>
+      </div>
+      <div style="height:1px;background:var(--border)"></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800">
+        <span>Total</span>
+        <span style="color:var(--red)">$${c.expenses}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Savings rate ring -->
+  <div class="card">
+    <div class="card-title">Savings Rate</div>
+    <div class="ring-wrap">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--s2)" stroke-width="9"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="${rateColor}" stroke-width="9"
+          stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"
+          stroke-linecap="round" transform="rotate(-90 50 50)"/>
+        <text x="50" y="54" text-anchor="middle" font-family="Orbitron" font-size="17" font-weight="900" fill="${rateColor}">${c.rate}%</text>
+      </svg>
+      <div>
+        <div class="ring-lbl">Surplus / mo</div>
+        <div class="ring-val">$${c.surplus.toLocaleString()}</div>
+        <div style="height:8px"></div>
+        <div class="ring-lbl">After allocations</div>
+        <div style="font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:var(--gold)">$${c.available.toLocaleString()}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Allocations -->
+  <div class="card" style="grid-column:1/3">
+    <div class="card-title">10% Rule — Asset Allocations</div>
+    <div style="display:flex;gap:20px">
+      <div style="flex:1">
+        <div class="alloc-row">
+          <div class="alloc-icon">🥇</div>
+          <div style="flex:1">
+            <div class="alloc-name">Gold / Silver</div>
+            <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,state.allocGold/state.income*100).toFixed(0)}%;background:var(--gold)"></div></div>
+            <div style="font-size:9px;color:var(--muted)">${(state.allocGold/state.income*100).toFixed(1)}% of income · $${state.allocGold*12}/yr</div>
+          </div>
+          <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--gold);margin-left:10px">$${state.allocGold}</div>
+        </div>
+        <div class="alloc-row" style="margin-bottom:0">
+          <div class="alloc-icon">📈</div>
+          <div style="flex:1">
+            <div class="alloc-name">Stocks / Crypto</div>
+            <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,state.allocStocks/state.income*100).toFixed(0)}%;background:var(--blue)"></div></div>
+            <div style="font-size:9px;color:var(--muted)">${(state.allocStocks/state.income*100).toFixed(1)}% of income · $${state.allocStocks*12}/yr</div>
+          </div>
+          <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--blue);margin-left:10px">$${state.allocStocks}</div>
+        </div>
+      </div>
+      <div style="width:1px;background:var(--border)"></div>
+      <div style="min-width:140px;display:flex;flex-direction:column;justify-content:center;gap:6px">
+        <div style="font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase">Total into assets</div>
+        <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900">$${c.allocTotal}<span style="font-size:11px;color:var(--muted)">/mo</span></div>
+        <div style="font-size:10px;color:var(--muted)">$${(c.allocTotal*12).toLocaleString()}/year</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Goal -->
+  <div class="card" style="background:linear-gradient(135deg,rgba(201,168,76,.07) 0%,var(--s1) 60%);border-color:rgba(201,168,76,.15)">
+    <div class="card-title">$${state.goal.toLocaleString()} / Year Goal</div>
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+        <span style="font-size:10px;color:var(--muted)">Projected</span>
+        <span style="font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:${c.gap<=0?'var(--green)':'var(--text)'}">$${c.annualProj.toLocaleString()}</span>
+      </div>
+      <div class="prog-track" style="height:9px">
+        <div class="prog-fill" style="width:${Math.min(100,c.annualProj/state.goal*100).toFixed(1)}%;background:${c.gap<=0?'var(--green)':'linear-gradient(90deg,var(--gold),var(--gold2))'}"></div>
+      </div>
+      <div style="font-size:9px;color:var(--muted);margin-top:3px">${(c.annualProj/state.goal*100).toFixed(0)}% of $${state.goal.toLocaleString()}</div>
+    </div>
+    ${c.gap > 0
+      ? `<div class="gap-pill">⚡ Gap: $${c.gap.toLocaleString()}/yr · $${Math.ceil(c.gap/12)}/mo short</div>`
+      : `<div class="on-track">✓ On track to hit $${state.goal.toLocaleString()}</div>`}
+  </div>`;
+}
+
+// ── Subscriptions ──────────────────────────────────────────────────────────────
+function buildSubscriptions(c) {
+  const alerts = state.subscriptions.filter(s => subAlert(s));
+  return `
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div class="card-title" style="margin-bottom:3px">Subscription Manager</div>
+        <div style="font-size:10px;color:var(--muted)">
+          Total: <span style="color:var(--text);font-weight:700">$${c.subTotal}/mo</span>
+          &nbsp;·&nbsp; <span style="color:var(--text);font-weight:700">$${c.subTotal*12}/yr</span>
+        </div>
+      </div>
+      <button class="add-btn" data-action="add-sub">＋ Add</button>
+    </div>
+
+    ${alerts.length ? `
+    <div class="alert-box">
+      <div class="alert-hd">⚠ Upcoming / Expiring</div>
+      ${alerts.map(s => {
+        const al = subAlert(s);
+        return `<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-bottom:5px">
+          <span>${s.icon} ${s.name}</span>
+          <span class="badge badge-${al.level}">${al.text}</span>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <div>
+      ${state.subscriptions.map(s => {
+        const al = subAlert(s);
+        const dd = daysUntilDue(s);
+        const td = daysUntilTrialEnd(s);
+        const metaText = s.isTrial && s.trialEnd
+          ? `Free trial · ends ${new Date(s.trialEnd).toLocaleDateString('en-CA',{month:'short',day:'numeric'})}`
+          : `Due day ${s.dueDay} · in ${dd}d`;
+        return `
+        <div class="sub-row">
+          <div class="sub-icon" style="opacity:${s.active?1:0.4}">${s.icon}</div>
+          <div style="flex:1;min-width:0">
+            <div class="sub-name" style="opacity:${s.active?1:0.5}">${s.name}</div>
+            <div class="sub-meta">${metaText}</div>
+          </div>
+          ${al ? `<span class="badge badge-${al.level}" style="margin-right:6px">${al.text}</span>` : ''}
+          ${!s.active ? `<span class="badge" style="background:var(--s2);color:var(--muted);border:1px solid var(--border);margin-right:6px">PAUSED</span>` : ''}
+          <div class="sub-amount" style="opacity:${s.active?1:0.4}">$${s.amount}/mo</div>
+          <div class="sub-actions">
+            <button class="ibtn" data-action="edit-sub" data-id="${s.id}" title="Edit">✏</button>
+            <button class="ibtn" data-action="toggle-sub" data-id="${s.id}" title="${s.active?'Pause':'Activate'}"
+              style="color:${s.active?'var(--green)':'var(--muted)'}">${s.active?'●':'○'}</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:10px;color:var(--muted)">Active subscriptions cut into your surplus — keep them reviewed monthly.</div>
+    </div>
+  </div>`;
+}
+
+// ── Savings ────────────────────────────────────────────────────────────────────
+function buildSavings(c) {
+  const TARGET_MO = Math.ceil(state.goal / 12);
+  const shortfall = TARGET_MO - c.available;
+  return `
+  <!-- Annual goal -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="card">
+      <div class="card-title">$${state.goal.toLocaleString()} Annual Goal</div>
+      <div style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:${c.gap<=0?'var(--green)':'var(--gold)'}">
+        $${c.annualProj.toLocaleString()}
+        <span style="font-size:12px;color:var(--muted);font-weight:500">/yr projected</span>
+      </div>
+      <div class="prog-track" style="height:10px;margin-top:12px">
+        <div class="prog-fill" style="width:${Math.min(100,c.annualProj/state.goal*100).toFixed(1)}%;background:linear-gradient(90deg,var(--gold),var(--green))"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:5px">
+        <span>$0</span>
+        <span>${(c.annualProj/state.goal*100).toFixed(0)}% complete</span>
+        <span>$${state.goal.toLocaleString()}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px">
+        <div style="background:var(--s2);border-radius:var(--r-sm);padding:12px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Surplus</div>
+          <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900">$${c.surplus.toLocaleString()}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:var(--r-sm);padding:12px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Available</div>
+          <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--gold)">$${c.available.toLocaleString()}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:var(--r-sm);padding:12px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Target</div>
+          <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900">$${TARGET_MO.toLocaleString()}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        ${shortfall > 0
+          ? `<div class="gap-pill">⚡ $${shortfall}/mo gap to $${state.goal.toLocaleString()} — try extra shift, freelance, or trim $${shortfall} in subs</div>`
+          : `<div class="on-track">✓ You're on track to hit $${state.goal.toLocaleString()} this year</div>`}
+      </div>
+    </div>
+
+    <!-- Allocations edit -->
+    <div class="card">
+      <div class="card-title">Asset Allocation Controls</div>
+      <div class="alloc-row">
+        <div class="alloc-icon">🥇</div>
+        <div style="flex:1">
+          <div class="alloc-name">Gold / Silver</div>
+          <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,state.allocGold/state.income*100).toFixed(0)}%;background:var(--gold)"></div></div>
+        </div>
+        <input id="alloc-gold" type="number" class="fi" style="width:74px;text-align:right;padding:5px 8px;font-family:'Orbitron',monospace;font-size:12px" value="${state.allocGold}" min="0">
+      </div>
+      <div class="alloc-row" style="margin-bottom:0">
+        <div class="alloc-icon">📈</div>
+        <div style="flex:1">
+          <div class="alloc-name">Stocks / Crypto</div>
+          <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,state.allocStocks/state.income*100).toFixed(0)}%;background:var(--blue)"></div></div>
+        </div>
+        <input id="alloc-stocks" type="number" class="fi" style="width:74px;text-align:right;padding:5px 8px;font-family:'Orbitron',monospace;font-size:12px" value="${state.allocStocks}" min="0">
+      </div>
+      <div class="div"></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px">
+        <span style="color:var(--muted)">$${(state.allocGold*12).toLocaleString()} gold + $${(state.allocStocks*12).toLocaleString()} stocks = $${(c.allocTotal*12).toLocaleString()}/yr</span>
+        <span style="font-family:'Orbitron',monospace;font-weight:700;color:var(--gold)">$${c.allocTotal}/mo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly log -->
+  <div class="card" style="display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="card-title" style="margin:0">Monthly Savings Log</div>
+      <button class="add-btn" data-action="add-log">＋ Log Month</button>
+    </div>
+    ${state.monthlyLog.length === 0
+      ? `<div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:32px;color:var(--muted);font-size:11px;line-height:1.7">
+           No months logged yet.<br>Track your actual savings here to see real progress.
+         </div>`
+      : `<div style="flex:1;overflow-y:auto">
+           ${[...state.monthlyLog].reverse().map(m => {
+             const pct = Math.min(100, m.amount / Math.max(c.available, 1) * 100);
+             const hit = m.amount >= TARGET_MO;
+             return `<div class="log-row">
+               <div class="log-month">${m.month.slice(0,7)}</div>
+               <div class="log-bar-wrap"><div class="log-bar" style="width:${pct.toFixed(0)}%;background:${hit?'var(--green)':'var(--gold)'}"></div></div>
+               <div class="log-amt" style="color:${hit?'var(--green)':'var(--text)'}">$${m.amount.toLocaleString()}</div>
+               <button class="ibtn" data-action="del-log" data-month="${m.month}" style="flex-shrink:0;margin-left:6px">✕</button>
+             </div>`;
+           }).join('')}
+         </div>
+         <div class="div"></div>
+         <div style="display:flex;justify-content:space-between;font-size:10px">
+           <span style="color:var(--muted)">${state.monthlyLog.length} months logged</span>
+           <span style="font-family:'Orbitron',monospace;font-weight:700;color:var(--green)">$${c.totalSaved.toLocaleString()} total</span>
+         </div>`}
+  </div>`;
+}
+
+// ── Modals ─────────────────────────────────────────────────────────────────────
+function buildModal() {
+  const { type, data } = modal;
+  if (type === 'sub') {
+    const isEdit = !!data.id;
+    return `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal" id="modal-box">
+        <div class="modal-title">${isEdit ? 'Edit' : 'Add'} Subscription</div>
+        <div class="fg"><label class="fl">Name</label>
+          <input class="fi" id="m-name" type="text" value="${data.name||''}" placeholder="Netflix, Gym, Adobe...">
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Icon</label>
+            <input class="fi" id="m-icon" type="text" value="${data.icon||'📦'}" maxlength="2">
+          </div>
+          <div class="fg"><label class="fl">$/month</label>
+            <input class="fi" id="m-amount" type="number" value="${data.amount||''}" min="0" step="0.01">
+          </div>
+          <div class="fg"><label class="fl">Due Day</label>
+            <input class="fi" id="m-due" type="number" value="${data.dueDay||1}" min="1" max="28">
+          </div>
+        </div>
+        <div class="fg"><label class="cblabel"><input type="checkbox" id="m-trial" ${data.isTrial?'checked':''}> Free trial</label></div>
+        <div class="fg" id="trial-grp" style="${data.isTrial?'':'display:none'}">
+          <label class="fl">Trial End Date</label>
+          <input class="fi" id="m-trial-end" type="date" value="${data.trialEnd||''}">
+        </div>
+        <div class="m-foot">
+          ${isEdit ? `<button class="m-del" data-action="del-sub" data-id="${data.id}">Delete</button>` : ''}
+          <button class="m-cancel" data-action="close-modal">Cancel</button>
+          <button class="m-save" data-action="save-sub">Save</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if (type === 'log') {
+    const now = new Date();
+    const defMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    return `
+    <div class="modal-bg" id="modal-bg">
+      <div class="modal">
+        <div class="modal-title">Log Monthly Savings</div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Month</label>
+            <input class="fi" id="m-month" type="month" value="${defMonth}">
+          </div>
+          <div class="fg"><label class="fl">Amount Saved ($)</label>
+            <input class="fi" id="m-log-amt" type="number" value="${calc().available}" min="0">
+          </div>
+        </div>
+        <div class="m-foot">
+          <button class="m-cancel" data-action="close-modal">Cancel</button>
+          <button class="m-save" data-action="save-log">Save</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return '';
+}
+
+// ── Input bindings (re-bound on each render) ───────────────────────────────────
+function bindInputs() {
+  const income = document.getElementById('income-in');
+  if (income) income.addEventListener('change', () => {
+    state.income = parseFloat(income.value) || 0; save(); render();
+  });
+
+  const gold = document.getElementById('alloc-gold');
+  if (gold) gold.addEventListener('change', () => {
+    state.allocGold = parseFloat(gold.value) || 0; save(); render();
+  });
+
+  const stocks = document.getElementById('alloc-stocks');
+  if (stocks) stocks.addEventListener('change', () => {
+    state.allocStocks = parseFloat(stocks.value) || 0; save(); render();
+  });
+
+  const trial = document.getElementById('m-trial');
+  if (trial) trial.addEventListener('change', () => {
+    const grp = document.getElementById('trial-grp');
+    if (grp) grp.style.display = trial.checked ? '' : 'none';
+  });
+}
+
+// ── Global click handler (attached once) ──────────────────────────────────────
+document.addEventListener('click', e => {
+  // Modal background dismiss
+  if (e.target.id === 'modal-bg') { modal = null; render(); return; }
+
+  const el = e.target.closest('[data-action],[data-view]');
+  if (!el) return;
+
+  if (el.dataset.view) { state.view = el.dataset.view; render(); return; }
+
+  const a = el.dataset.action;
+  if (!a) return;
+
+  if (a === 'add-sub') {
+    modal = { type:'sub', data:{} }; render();
+
+  } else if (a === 'edit-sub') {
+    const s = state.subscriptions.find(s => s.id === el.dataset.id);
+    if (s) { modal = { type:'sub', data:{...s} }; render(); }
+
+  } else if (a === 'toggle-sub') {
+    const s = state.subscriptions.find(s => s.id === el.dataset.id);
+    if (s) { s.active = !s.active; save(); render(); }
+
+  } else if (a === 'del-sub') {
+    state.subscriptions = state.subscriptions.filter(s => s.id !== el.dataset.id);
+    modal = null; save(); render();
+
+  } else if (a === 'save-sub') {
+    const isEdit = !!(modal && modal.data && modal.data.id);
+    const sub = {
+      id:         isEdit ? modal.data.id : `s${Date.now()}`,
+      name:       (document.getElementById('m-name').value.trim()) || 'Subscription',
+      icon:       (document.getElementById('m-icon').value.trim()) || '📦',
+      amount:     parseFloat(document.getElementById('m-amount').value) || 0,
+      dueDay:     parseInt(document.getElementById('m-due').value)    || 1,
+      isTrial:    document.getElementById('m-trial').checked,
+      trialEnd:   document.getElementById('m-trial-end')?.value || '',
+      active:     isEdit ? modal.data.active !== false : true,
+    };
+    if (isEdit) {
+      const idx = state.subscriptions.findIndex(s => s.id === sub.id);
+      state.subscriptions[idx] = sub;
+    } else {
+      state.subscriptions.push(sub);
+    }
+    modal = null; save(); render();
+
+  } else if (a === 'close-modal') {
+    modal = null; render();
+
+  } else if (a === 'add-log') {
+    modal = { type:'log', data:{} }; render();
+
+  } else if (a === 'save-log') {
+    const month  = document.getElementById('m-month').value;
+    const amount = parseFloat(document.getElementById('m-log-amt').value) || 0;
+    if (month) {
+      const idx = state.monthlyLog.findIndex(m => m.month === month);
+      if (idx >= 0) state.monthlyLog[idx].amount = amount;
+      else state.monthlyLog.push({ month, amount });
+      state.monthlyLog.sort((a,b) => a.month.localeCompare(b.month));
+    }
+    modal = null; save(); render();
+
+  } else if (a === 'del-log') {
+    state.monthlyLog = state.monthlyLog.filter(m => m.month !== el.dataset.month);
+    save(); render();
+
+  } else if (a === 'print' || el.id === 'print-btn') {
+    window.print();
+  }
+});
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>

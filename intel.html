@@ -1,0 +1,2415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HYK Intelligence Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#030311;--s1:#07071C;--s2:#0B0B26;--s3:#10103A;
+  --gold:#C9A84C;--g2:#E8C568;
+  --cy:#00CFFF;--gn:#00E59B;--rd:#FF3355;--or:#FF8C42;--pu:#9B72FF;--bl:#4A9EFF;
+  --tx:#D8E8FF;--mu:rgba(150,180,255,.45);--dm:rgba(150,180,255,.10);--bd:rgba(0,207,255,.07);
+  --r:11px;--rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;height:100vh;overflow:hidden;font-size:12px}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;padding:0 18px;height:50px;background:var(--s1);border-bottom:1px solid var(--bd);flex-shrink:0;gap:14px}
+.logo{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--gold);letter-spacing:.16em;white-space:nowrap;flex-shrink:0}
+.logo em{font-style:normal;font-family:'Inter',sans-serif;font-size:9px;font-weight:500;color:var(--mu);margin-left:8px;letter-spacing:.04em}
+.tabs{display:flex;gap:2px;background:var(--s2);padding:3px;border-radius:var(--rs);flex-shrink:0}
+.tab{padding:5px 11px;border:none;background:none;color:var(--mu);font-size:9px;font-weight:800;cursor:pointer;border-radius:5px;letter-spacing:.07em;text-transform:uppercase;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.tab.active{background:rgba(0,207,255,.13);color:var(--cy);border:1px solid rgba(0,207,255,.22)}
+.hdr-r{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+.sdots{display:flex;gap:5px;align-items:center}
+.sd{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:background .3s}
+.sd-ok{background:var(--gn);animation:pg 2.5s infinite}
+.sd-err{background:var(--rd)}
+.sd-ld{background:var(--or);animation:po .9s infinite}
+@keyframes pg{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes po{0%,100%{opacity:1}50%{opacity:.2}}
+.hdr-clock{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.06em;text-align:right}
+.hdr-date{font-size:9px;color:var(--mu);letter-spacing:.03em;text-align:right;margin-top:1px}
+.rbtn{padding:4px 9px;background:rgba(0,207,255,.06);border:1px solid rgba(0,207,255,.18);border-radius:var(--rs);color:var(--cy);font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.05em;transition:all .15s}
+.rbtn:hover{background:rgba(0,207,255,.14)}
+.rbtn.spin{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes xio-pulse{0%,100%{box-shadow:0 0 8px rgba(255,107,157,.3)}50%{box-shadow:0 0 18px rgba(255,107,157,.6)}}
+@keyframes xio-speak{0%,100%{box-shadow:0 0 4px rgba(255,107,157,.5),0 0 0 0 rgba(255,107,157,.4)}50%{box-shadow:0 0 10px rgba(255,107,157,.8),0 0 12px 4px rgba(255,107,157,.2)}}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--dm);border-radius:2px}
+
+/* ── CARDS ── */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:13px}
+.ct{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.ctd{width:5px;height:5px;border-radius:50%;background:var(--cy);flex-shrink:0}
+.div{height:1px;background:var(--bd);margin:9px 0}
+
+/* ── GRID HELPERS ── */
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.g2-3{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+
+/* ── BADGES ── */
+.b{display:inline-block;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:.03em;white-space:nowrap}
+.b-gn{background:rgba(0,229,155,.1);color:var(--gn);border:1px solid rgba(0,229,155,.22)}
+.b-rd{background:rgba(255,51,85,.1);color:var(--rd);border:1px solid rgba(255,51,85,.22)}
+.b-or{background:rgba(255,140,66,.1);color:var(--or);border:1px solid rgba(255,140,66,.22)}
+.b-cy{background:rgba(0,207,255,.08);color:var(--cy);border:1px solid rgba(0,207,255,.18)}
+.b-pu{background:rgba(155,114,255,.08);color:var(--pu);border:1px solid rgba(155,114,255,.18)}
+.b-gd{background:rgba(201,168,76,.1);color:var(--gold);border:1px solid rgba(201,168,76,.22)}
+
+/* ── CRYPTO ROWS ── */
+.cr{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--dm)}
+.cr:last-child{border-bottom:none}
+.cr-sym{font-family:'Orbitron',monospace;font-size:9px;font-weight:900;color:var(--cy);width:32px;flex-shrink:0}
+.cr-name{color:var(--mu);font-size:9px;flex:1;min-width:0}
+.cr-px{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;flex-shrink:0}
+.cr-ch{font-size:9px;font-weight:700;width:46px;text-align:right;flex-shrink:0}
+.up{color:var(--gn)}.dn{color:var(--rd)}
+
+/* ── NEWS ── */
+.ni{padding:7px 0;border-bottom:1px solid var(--dm);cursor:pointer;transition:all .1s}
+.ni:last-child{border-bottom:none}
+.ni:hover .ni-t{color:var(--cy)}
+.ni-ts{font-size:9px;color:var(--mu);margin-bottom:3px}
+.ni-t{font-size:11px;font-weight:600;line-height:1.4;color:var(--tx);transition:color .15s}
+.ni-d{font-size:10px;color:var(--mu);margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ── TOOL BUTTONS ── */
+.tb{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--s2);border:1px solid var(--dm);border-radius:var(--rs);cursor:pointer;transition:all .15s;width:100%;text-align:left;font-family:'Inter',sans-serif;margin-bottom:5px}
+.tb:last-child{margin-bottom:0}
+.tb:hover{border-color:rgba(0,207,255,.3);background:var(--s3)}
+.tb-icon{font-size:18px;flex-shrink:0;width:28px;text-align:center}
+.tb-name{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:1px}
+.tb-desc{font-size:9px;color:var(--mu)}
+.tb-arrow{color:var(--mu);margin-left:auto;font-size:12px;flex-shrink:0}
+
+/* ── WEATHER ── */
+.wx-main{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.wx-icon{font-size:40px;line-height:1}
+.wx-temp{font-family:'Orbitron',monospace;font-size:34px;font-weight:900}
+.wx-cond{font-size:10px;color:var(--mu);margin-top:2px}
+.wx-row{display:flex;justify-content:space-between;font-size:10px;padding:4px 0;border-bottom:1px solid var(--dm)}
+.wx-row:last-child{border-bottom:none}
+.wx-lbl{color:var(--mu)}
+
+/* ── FEAR GREED ── */
+.fg-wrap{display:flex;flex-direction:column;align-items:center}
+
+/* ── COL CARD ── */
+.col-c{padding:10px;background:var(--s2);border-radius:var(--rs);border:1px solid var(--dm);cursor:default}
+.col-hd{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.col-flag{font-size:15px}
+.col-city{font-weight:700;font-size:11px}
+.col-total{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;color:var(--gold);margin-bottom:3px}
+.col-row{display:flex;justify-content:space-between;font-size:9px;color:var(--mu);padding:2px 0}
+
+/* ── REGION CARDS ── */
+.rgn{padding:10px 11px;background:var(--s2);border-radius:var(--rs);border:1px solid var(--dm);cursor:pointer;transition:all .15s;margin-bottom:6px}
+.rgn:hover{border-color:rgba(0,207,255,.3);background:var(--s3)}
+.rgn:last-child{margin-bottom:0}
+.rgn-hd{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.rgn-name{font-weight:700;font-size:11px}
+.rgn-tags{display:flex;gap:4px;flex-wrap:wrap}
+.rgn-desc{font-size:9px;color:var(--mu);line-height:1.5;margin-top:4px}
+
+/* ── JOB LINKS ── */
+.jcat{margin-bottom:14px}
+.jcat-t{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:7px}
+.jl{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--s2);border-radius:var(--rs);border:1px solid var(--dm);cursor:pointer;transition:all .15s;font-size:11px;margin-bottom:3px}
+.jl:last-child{margin-bottom:0}
+.jl:hover{border-color:rgba(0,207,255,.28);background:var(--s3)}
+.jl-name{font-weight:600;color:var(--tx)}
+.jl-tag{font-size:9px;color:var(--mu)}
+
+/* ── SHIMMER ── */
+.sh{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:4px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── SECTION LABEL ── */
+.sec{display:flex;align-items:center;gap:8px;margin:10px 0 8px}
+.sec span{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);white-space:nowrap}
+.sec::before,.sec::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* ── SKILL CHIPS ── */
+.skill-grid{display:flex;flex-wrap:wrap;gap:6px}
+.sk{padding:5px 10px;background:var(--s2);border:1px solid var(--dm);border-radius:20px;font-size:10px;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:5px}
+.sk-hot{border-color:rgba(255,140,66,.3);color:var(--or)}
+.sk-fire{border-color:rgba(255,51,85,.3);color:var(--rd)}
+
+/* ── PROGRESS BAR ── */
+.pb{height:5px;background:var(--s2);border-radius:3px;overflow:hidden;margin:4px 0}
+.pbf{height:100%;border-radius:3px;transition:width .4s}
+
+/* ── GEO MAP ── */
+#geo-map{width:100%;height:420px;background:var(--s2)}
+.leaflet-tile-pane{filter:brightness(.55) invert(1) contrast(1.5) hue-rotate(200deg) saturate(.5)}
+.leaflet-container{background:#020210!important;cursor:crosshair!important}
+.leaflet-control-zoom a{background:var(--s2)!important;color:var(--cy)!important;border-color:var(--bd)!important;font-size:14px!important}
+.leaflet-control-zoom{border:1px solid var(--bd)!important}
+.leaflet-popup-content-wrapper{background:var(--s1)!important;color:var(--tx)!important;border:1px solid var(--bd)!important;box-shadow:0 4px 20px rgba(0,0,0,.6)!important;border-radius:var(--rs)!important;font-family:'Inter',sans-serif!important;font-size:11px!important}
+.leaflet-popup-tip{background:var(--s1)!important}
+/* ── ENTERTAINMENT / LOUNGE ── */
+.ent-cat-btn{padding:9px 14px;border:none;border-bottom:3px solid transparent;background:transparent;color:rgba(255,255,255,.38);font-size:9.5px;font-weight:800;cursor:pointer;white-space:nowrap;letter-spacing:.07em;text-transform:uppercase;transition:all .15s;flex-shrink:0}
+.ent-cat-btn:hover{color:rgba(201,168,76,.75);background:rgba(201,168,76,.04)}
+.ent-cat-btn.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(201,168,76,.07)}
+.ent-card{background:var(--s1);border:1px solid rgba(255,255,255,.06);border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s;display:flex;flex-direction:column}
+.ent-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.55),0 0 0 1px rgba(201,168,76,.2);border-color:rgba(201,168,76,.22)}
+.ent-hero{background:var(--s1);border:1px solid rgba(255,255,255,.06);border-radius:6px;overflow:hidden;cursor:pointer;transition:box-shadow .18s,border-color .18s}
+.ent-hero:hover{box-shadow:0 6px 22px rgba(0,0,0,.5),0 0 0 1px rgba(201,168,76,.26);border-color:rgba(201,168,76,.28)}
+.ent-story{display:flex;gap:10px;padding:10px 13px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .12s}
+.ent-story:hover{background:rgba(201,168,76,.05)}
+.ent-story:last-child{border-bottom:none}
+@keyframes lounge-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ent-card{animation:lounge-in .25s ease both}
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @page{size:A4;margin:10mm}
+  body{background:#fff!important;overflow:visible!important}
+  #app{height:auto!important;overflow:visible!important}
+  .hdr{background:#f5f5f5!important;-webkit-print-color-adjust:exact!important}
+  .tabs,.rbtn{display:none!important}
+  .main{overflow:visible!important;display:block!important;padding:10px!important}
+  .card{background:#fff!important;border:1px solid #ddd!important;margin-bottom:12px!important;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
+const COIN_IDS = 'bitcoin,ethereum,solana,binancecoin,cardano,ripple,dogecoin,avalanche-2';
+const COINS = {
+  bitcoin:    { sym:'BTC',  name:'Bitcoin',   em:'₿' },
+  ethereum:   { sym:'ETH',  name:'Ethereum',  em:'Ξ' },
+  solana:     { sym:'SOL',  name:'Solana',    em:'◎' },
+  binancecoin:{ sym:'BNB',  name:'BNB',       em:'◈' },
+  cardano:    { sym:'ADA',  name:'Cardano',   em:'₳' },
+  ripple:     { sym:'XRP',  name:'XRP',       em:'✕' },
+  dogecoin:   { sym:'DOGE', name:'Dogecoin',  em:'Ð' },
+  'avalanche-2':{ sym:'AVAX',name:'Avalanche', em:'△' },
+};
+const WX = {
+  0:['☀️','Clear'],1:['🌤️','Mostly Clear'],2:['⛅','Partly Cloudy'],3:['☁️','Overcast'],
+  45:['🌫️','Fog'],48:['🌫️','Icy Fog'],51:['🌦️','Lt. Drizzle'],53:['🌦️','Drizzle'],55:['🌧️','Hvy Drizzle'],
+  61:['🌧️','Lt. Rain'],63:['🌧️','Rain'],65:['🌧️','Hvy Rain'],
+  71:['🌨️','Lt. Snow'],73:['🌨️','Snow'],75:['❄️','Hvy Snow'],77:['🌨️','Snow Grains'],
+  80:['🌦️','Showers'],81:['🌧️','Hvy Showers'],82:['⛈️','Violent Rain'],
+  85:['🌨️','Snow Showers'],86:['❄️','Hvy Snow Showers'],95:['⛈️','Thunderstorm'],99:['⛈️','T-Storm + Hail'],
+};
+const FG_ZONES = [
+  [0,24,'#FF2040','Extreme Fear'],[25,44,'#FF8C42','Fear'],
+  [45,55,'#FFD700','Neutral'],[56,74,'#88D900','Greed'],[75,100,'#00E59B','Extreme Greed'],
+];
+function fgMeta(v){ const z=FG_ZONES.find(z=>v>=z[0]&&v<=z[1]);return z?{color:z[2],label:z[3]}:{color:'#fff',label:'--'}; }
+
+const REGIONS = [
+  { flag:'🇭🇹', name:'Haiti', tags:['Political','Diaspora','Development'], desc:'Track political stability, diaspora programs, investment opportunities, and diaspora remittances. Key indicator for Caribbean regional security.' },
+  { flag:'🇬🇭', name:'Ghana', tags:['Economy','Tech','Elections'], desc:'One of West Africa\'s most stable democracies. Growing tech scene in Accra. Monitor elections, cedi exchange rate, and Year of Return diaspora policy.' },
+  { flag:'🌊', name:'Caribbean', tags:['Tourism','Climate','Digital Nomad'], desc:'Tourism economies, climate vulnerabilities, remote-work visa programs (Barbados Welcome Stamp, Jamaica ZEST). Monitor hurricane season (Jun–Nov).' },
+  { flag:'🌍', name:'West Africa', tags:['Tech Boom','Investment','Mobile Money'], desc:'Fastest-growing mobile money region globally. Nigeria, Senegal, Ghana leading fintech. Monitor ECOWAS trade, CFA franc, military coups timeline.' },
+  { flag:'🌎', name:'Americas', tags:['Immigration','Trade','Politics'], desc:'US/Canada policy, IRCC immigration streams, USMCA trade. Track political cycles: US midterms, Canadian elections, Latin American shifts.' },
+];
+// All prices in CAD. USD costs converted at ~1.37. Dating = dinners×2/wk + activities + gifts + transport.
+const CITIES = [
+  { flag:'🇨🇦', city:'Montréal',      country:'Canada',    studio:1500, food:400,  dating:900,  total:2300, tag:'Home Base',          internet:'Fast',    safety:'Safe',      climate:'Cold winters'   },
+  { flag:'🇨🇴', city:'Medellín',      country:'Colombia',  studio:575,  food:275,  dating:350,  total:1165, tag:'Digital Nomad Hub',  internet:'Good',    safety:'Moderate',  climate:'Spring yr-round' },
+  { flag:'🇹🇭', city:'Bangkok',       country:'Thailand',  studio:685,  food:205,  dating:275,  total:1235, tag:'SE Asia Base',       internet:'Fast',    safety:'Safe',      climate:'Hot/Tropical'   },
+  { flag:'🇻🇳', city:'Ho Chi Minh',   country:'Vietnam',   studio:590,  food:165,  dating:230,  total:1070, tag:'Affordable + Buzzy', internet:'Fast',    safety:'Very Safe', climate:'Tropical'       },
+  { flag:'🇲🇾', city:'Kuala Lumpur',  country:'Malaysia',  studio:770,  food:245,  dating:275,  total:1300, tag:'Muslim-Friendly',    internet:'Fast',    safety:'Safe',      climate:'Tropical'       },
+  { flag:'🇬🇪', city:'Tbilisi',       country:'Georgia',   studio:550,  food:275,  dating:275,  total:1125, tag:'Hidden Gem',         internet:'Fast',    safety:'Very Safe', climate:'Mild summers'   },
+  { flag:'🇰🇪', city:'Nairobi',       country:'Kenya',     studio:575,  food:260,  dating:310,  total:1095, tag:'Africa Tech Hub',    internet:'Good',    safety:'Moderate',  climate:'Mild yr-round'  },
+  { flag:'🇬🇭', city:'Accra',         country:'Ghana',     studio:480,  food:220,  dating:275,  total:985,  tag:'Diaspora Gateway',   internet:'Moderate',safety:'Safe',      climate:'Tropical'       },
+  { flag:'🇭🇺', city:'Budapest',      country:'Hungary',   studio:985,  food:395,  dating:500,  total:1780, tag:'European Base',      internet:'Fast',    safety:'Safe',      climate:'4 seasons'      },
+  { flag:'🇭🇹', city:'Port-au-Prince',country:'Haiti',     studio:385,  food:190,  dating:185,  total:850,  tag:'Diaspora Roots',     internet:'Limited', safety:'High Risk', climate:'Tropical'       },
+  { flag:'🇺🇸', city:'Miami',         country:'USA',       studio:3015, food:615,  dating:1100, total:4385, tag:'Caribbean Vibe+US',  internet:'Fast',    safety:'Moderate',  climate:'Warm+Humid'     },
+  // ── MU Beauty Bonus Cities ──
+  { flag:'🇻🇪', city:'Caracas',       country:'Venezuela',  studio:160,  food:80,   dating:110,  total:320,  tag:'MU Powerhouse',      internet:'Unreliable',safety:'Dangerous', climate:'Tropical'       },
+  { flag:'🇩🇴', city:'Santo Domingo', country:'Dominican Republic', studio:520, food:220, dating:285, total:700, tag:'Caribbean Pearl', internet:'Good',    safety:'Moderate',  climate:'Caribbean'      },
+  { flag:'🇯🇲', city:'Montego Bay',   country:'Jamaica',    studio:800,  food:340,  dating:435,  total:1100, tag:'Island Vibes',       internet:'Good',    safety:'Moderate',  climate:'Tropical Beach' },
+  { flag:'🇺🇦', city:'Kyiv',          country:'Ukraine',    studio:580,  food:250,  dating:320,  total:850,  tag:'Eastern European',   internet:'Fast',    safety:'Dangerous', climate:'Continental'    },
+  { flag:'🇩🇰', city:'Copenhagen',    country:'Denmark',    studio:1800, food:640,  dating:820,  total:2600, tag:'Scandinavian Capital',internet:'Fast',    safety:'Very Safe', climate:'Temperate'      },
+  { flag:'🇳🇴', city:'Oslo',          country:'Norway',     studio:2100, food:720,  dating:930,  total:3100, tag:'Nordic Luxury',       internet:'Fast',    safety:'Very Safe', climate:'Nordic'         },
+  { flag:'🇫🇮', city:'Helsinki',      country:'Finland',    studio:1600, food:570,  dating:730,  total:2300, tag:'Nordic Gem',          internet:'Fast',    safety:'Very Safe', climate:'Nordic'         },
+  { flag:'🇮🇱', city:'Tel Aviv',      country:'Israel',     studio:2400, food:680,  dating:870,  total:3250, tag:'Mediterranean Tech',  internet:'Fast',    safety:'Moderate',  climate:'Mediterranean'  },
+  { flag:'🇫🇷', city:'Paris',         country:'France',     studio:2000, food:680,  dating:870,  total:2950, tag:'City of Light',       internet:'Fast',    safety:'Safe',      climate:'Temperate'      },
+  { flag:'🇪🇹', city:'Addis Ababa',   country:'Ethiopia',   studio:280,  food:120,  dating:155,  total:440,  tag:'African Capital',     internet:'Moderate',safety:'Moderate',  climate:'Highland Mild'  },
+];
+const TOOLS = [
+  { icon:'🗺️', name:'Live UA Map',          desc:'Real-time global conflict zones',  url:'https://liveuamap.com/' },
+  { icon:'✈️', name:'FlightRadar24',         desc:'Global air traffic live',          url:'https://www.flightradar24.com/' },
+  { icon:'📊', name:'TradingView',           desc:'Markets, charts, technical analysis', url:'https://www.tradingview.com/' },
+  { icon:'🌐', name:'Geopolitics Monitor',  desc:'Policy & strategic analysis',      url:'https://geopoliticsmonitor.com/' },
+  { icon:'🚇', name:'STM Montréal',         desc:'Transit status & schedules',       url:'https://www.stm.info/en/info/service-alerts' },
+  { icon:'⛽', name:'511 Québec',           desc:'Road conditions & traffic',        url:'https://www.quebec511.info/en/' },
+  { icon:'💡', name:'Hydro-Québec',         desc:'Power outages & interruptions',    url:'https://www.hydroquebec.com/pannes/' },
+  { icon:'📰', name:'Al Jazeera',           desc:'Global news with African/Mideast focus', url:'https://www.aljazeera.com/' },
+];
+
+// ── SOURCES ───────────────────────────────────────────────────────────────────
+const SOURCES = {
+  'N. America': [
+    {n:'AP News',            t:'News',       s:5, f:'real-time', d:'Independent global news wire, breaking coverage worldwide',          tags:['Global','US'],       u:'https://apnews.com/'},
+    {n:'CBC News',           t:'News',       s:5, f:'real-time', d:'Canadian public broadcaster, Arctic & domestic coverage',             tags:['Canada','Arctic'],   u:'https://www.cbc.ca/news'},
+    {n:'CSIS',               t:'Think Tank', s:5, f:'daily',     d:'Defense analysis, Asia-Pacific, technology policy',                   tags:['US Defense','Asia'],  u:'https://www.csis.org/'},
+    {n:'RAND Corp',          t:'Think Tank', s:5, f:'weekly',    d:'Nonprofit objective analysis — defense & security studies',           tags:['Defense','Global'],   u:'https://www.rand.org/'},
+    {n:'Voice of America',   t:'News',       s:4, f:'real-time', d:'US-funded global broadcaster, developing world focus',                tags:['Global','Africa'],    u:'https://www.voanews.com/'},
+    {n:'Atlantic Council',   t:'Think Tank', s:4, f:'daily',     d:'Transatlantic security, NATO, US foreign policy',                     tags:['N.America'],          u:'https://www.atlanticcouncil.org/'},
+    {n:'Brookings',          t:'Think Tank', s:4, f:'daily',     d:'Economic, social & governance policy research',                       tags:['N.America'],          u:'https://www.brookings.edu/'},
+    {n:'Carnegie Endowment', t:'Think Tank', s:4, f:'daily',     d:'International peace & global governance',                             tags:['N.America'],          u:'https://carnegieendowment.org/'},
+    {n:'War on the Rocks',   t:'Analysis',   s:4, f:'daily',     d:'US national security, strategy & foreign policy commentary',          tags:['N.America'],          u:'https://warontherocks.com/'},
+    {n:'Arms Control Assoc', t:'Watchdog',   s:4, f:'daily',     d:'Nuclear weapons, arms treaties, disarmament tracking',                tags:['N.America'],          u:'https://www.armscontrol.org/'},
+    {n:'Defense One',        t:'News',       s:4, f:'daily',     d:'US defense, military tech, Pentagon coverage',                        tags:['N.America'],          u:'https://www.defenseone.com/'},
+    {n:'The Hill',           t:'News',       s:4, f:'daily',     d:'US political news and analysis',                                      tags:['N.America'],          u:'https://thehill.com/'},
+    {n:'NPR',                t:'News',       s:4, f:'daily',     d:'Public radio, investigative & international',                         tags:['N.America'],          u:'https://www.npr.org/'},
+    {n:'ABC News',           t:'News',       s:4, f:'real-time', d:'Major US network, breaking news & video',                             tags:['US','Global'],        u:'https://abcnews.go.com/'},
+  ],
+  'Europe': [
+    {n:'BBC News',           t:'News',       s:5, f:'real-time', d:'World\'s leading public broadcaster, unmatched global reach',         tags:['Global','Europe'],    u:'https://www.bbc.com/news'},
+    {n:'Reuters',            t:'News',       s:5, f:'real-time', d:'Global wire service — financial, political, breaking',                tags:['Global','Markets'],   u:'https://www.reuters.com/'},
+    {n:'The Guardian',       t:'News',       s:5, f:'daily',     d:'Investigative journalism, climate, human rights',                     tags:['Europe','Global'],    u:'https://www.theguardian.com/'},
+    {n:'Deutsche Welle',     t:'News',       s:5, f:'real-time', d:'German intl broadcaster — Europe + Africa depth',                    tags:['Europe','Africa'],    u:'https://www.dw.com/en/'},
+    {n:'Kyiv Independent',   t:'News',       s:5, f:'real-time', d:'Ukraine war — on-ground, verified, English',                         tags:['Ukraine','E.Europe'], u:'https://kyivindependent.com/'},
+    {n:'Politico EU',        t:'Policy',     s:4, f:'real-time', d:'EU politics, legislation, Brussels insider coverage',                 tags:['Europe','EU'],        u:'https://www.politico.eu/'},
+    {n:'Radio Free Europe',  t:'News',       s:4, f:'real-time', d:'Eastern Europe & Central Asia, regional languages',                  tags:['E.Europe','C.Asia'],  u:'https://www.rferl.org/'},
+    {n:'France 24',          t:'News',       s:4, f:'daily',     d:'French intl broadcaster — strong Africa & global',                   tags:['Europe','Africa'],    u:'https://www.france24.com/en/'},
+    {n:'Chatham House',      t:'Think Tank', s:4, f:'daily',     d:'UK foreign affairs & international security research',               tags:['Europe'],             u:'https://www.chathamhouse.org/'},
+    {n:'RUSI',               t:'Defense',    s:4, f:'daily',     d:'Royal United Services Institute — UK defense analysis',              tags:['Europe'],             u:'https://rusi.org/'},
+    {n:'Euractiv',           t:'Policy',     s:4, f:'daily',     d:'EU policy, legislation, Brussels deep coverage',                     tags:['Europe'],             u:'https://www.euractiv.com/'},
+    {n:'OSW Warsaw',         t:'Think Tank', s:4, f:'daily',     d:'Eastern Europe, Russia & post-Soviet space analysis',                tags:['Europe'],             u:'https://www.osw.waw.pl/en'},
+    {n:'Balkan Insight',     t:'Regional',   s:4, f:'daily',     d:'Balkans accountability, transitions, war crimes',                    tags:['Europe'],             u:'https://balkaninsight.com/'},
+    {n:'Grey Dynamics',      t:'OSINT',      s:4, f:'daily',     d:'Geopolitical OSINT and open-source intelligence analysis',           tags:['Europe'],             u:'https://greydynamics.com/'},
+    {n:'TASS',               t:'State Media',s:3, f:'real-time', d:'Russian state agency — monitor for official Moscow position',        tags:['Russia'],             u:'https://tass.com/',             state:true},
+    {n:'Sputnik',            t:'State Media',s:3, f:'real-time', d:'Russian state-funded — read to track Kremlin narrative',             tags:['Russia'],             u:'https://sputnikglobe.com/',     state:true},
+  ],
+  'Asia': [
+    {n:'The Diplomat',       t:'Analysis',   s:4, f:'daily',     d:'Asia-Pacific politics, security, foreign policy depth',              tags:['Asia'],               u:'https://thediplomat.com/'},
+    {n:'CNA',                t:'News',       s:4, f:'daily',     d:'Channel News Asia — Singapore-based regional hub',                   tags:['Asia'],               u:'https://www.channelnewsasia.com/'},
+    {n:'NHK World',          t:'News',       s:4, f:'daily',     d:'Japan public broadcaster, Asia-Pacific focus',                       tags:['Asia'],               u:'https://www3.nhk.or.jp/nhkworld/'},
+    {n:'Bangkok Post',       t:'News',       s:4, f:'daily',     d:'Thailand English daily, SE Asia coverage',                           tags:['SE Asia'],            u:'https://www.bangkokpost.com/'},
+    {n:'The Hindu',          t:'News',       s:4, f:'daily',     d:'India\'s major English daily, South Asia analysis',                  tags:['S.Asia'],             u:'https://www.thehindu.com/'},
+    {n:'Times of India',     t:'News',       s:4, f:'daily',     d:'India\'s largest English-language daily',                            tags:['India'],              u:'https://timesofindia.indiatimes.com/'},
+    {n:'Korea Herald',       t:'News',       s:4, f:'daily',     d:'South Korea English daily, Korean Peninsula',                        tags:['NE Asia'],            u:'https://www.koreaherald.com/'},
+    {n:'Dawn',               t:'News',       s:4, f:'daily',     d:'Pakistan\'s leading English daily, South Asia',                     tags:['S.Asia'],             u:'https://www.dawn.com/'},
+    {n:'The Irrawaddy',      t:'Regional',   s:4, f:'daily',     d:'Myanmar/Burma independent journalism',                               tags:['SE Asia'],            u:'https://www.irrawaddy.com/'},
+    {n:'Jakarta Post',       t:'News',       s:4, f:'daily',     d:'Indonesia English daily, SE Asia coverage',                          tags:['SE Asia'],            u:'https://www.thejakartapost.com/'},
+    {n:'BenarNews',          t:'News',       s:4, f:'daily',     d:'RFA-backed SE Asia — Indonesia, Malaysia, Thailand',                 tags:['SE Asia'],            u:'https://www.benarnews.org/'},
+    {n:'KCNA Watch',         t:'Monitor',    s:4, f:'daily',     d:'North Korea state media tracker & full archive',                    tags:['Korea'],              u:'https://kcnawatch.org/'},
+    {n:'Eurasianet',         t:'Analysis',   s:4, f:'daily',     d:'Central Asia, Caucasus, Afghanistan ground-level',                  tags:['C.Asia'],             u:'https://eurasianet.org/'},
+    {n:'Astana Times',       t:'News',       s:4, f:'daily',     d:'Kazakhstan English news, Central Asia developments',                 tags:['C.Asia'],             u:'https://astanatimes.com/'},
+    {n:'Lowy Institute',     t:'Think Tank', s:4, f:'daily',     d:'Australia intl policy — Indo-Pacific strategy',                     tags:['Asia'],               u:'https://www.lowyinstitute.org/'},
+    {n:'Xinhua',             t:'State Media',s:4, f:'daily',     d:'Chinese state agency — monitor for Beijing position',               tags:['China'],              u:'https://english.news.cn/',      state:true},
+    {n:'Global Times',       t:'State Media',s:3, f:'daily',     d:'Chinese nationalist outlet — Beijing\'s hardline voice',            tags:['China'],              u:'https://www.globaltimes.cn/',   state:true},
+  ],
+  'Middle East': [
+    {n:'Al Jazeera',         t:'News',       s:4, f:'real-time', d:'Qatar-based, strong ME & Africa depth coverage',                    tags:['Mid East','Africa'],  u:'https://www.aljazeera.com/'},
+    {n:'Middle East Eye',    t:'News',       s:4, f:'daily',     d:'Independent ME — ground-level conflict reporting',                  tags:['Mid East'],           u:'https://www.middleeasteye.net/'},
+    {n:'Al-Monitor',         t:'Analysis',   s:4, f:'daily',     d:'Mideast politics — deep country-level analysis',                   tags:['Mid East'],           u:'https://www.al-monitor.com/'},
+    {n:'Times of Israel',    t:'News',       s:4, f:'daily',     d:'English Israeli news, conflict & regional coverage',               tags:['Israel'],             u:'https://www.timesofisrael.com/'},
+    {n:'Arab News',          t:'News',       s:4, f:'daily',     d:'Saudi English daily, Gulf perspective & analysis',                  tags:['Gulf'],               u:'https://www.arabnews.com/'},
+    {n:'Gulf News',          t:'News',       s:4, f:'daily',     d:'UAE-based, Gulf business & regional news',                          tags:['Gulf'],               u:'https://gulfnews.com/'},
+    {n:'Rudaw',              t:'Regional',   s:4, f:'daily',     d:'Kurdish media — Iraq, Syria, Kurdish affairs',                      tags:['Mid East'],           u:'https://www.rudaw.net/english'},
+    {n:'The National',       t:'News',       s:4, f:'daily',     d:'UAE-based English daily, Gulf & global coverage',                   tags:['Gulf'],               u:'https://www.thenationalnews.com/'},
+    {n:'Al-Ahram',           t:'News',       s:4, f:'daily',     d:'Egypt\'s oldest newspaper, Arab world coverage',                   tags:['Egypt'],              u:'https://english.ahram.org.eg/'},
+    {n:'TRT World',          t:'State Media',s:4, f:'daily',     d:'Turkish state intl broadcaster — Ankara perspective',              tags:['Turkey'],             u:'https://www.trtworld.com/',     state:true},
+    {n:'Tehran Times',       t:'State Media',s:3, f:'daily',     d:'Iranian state-affiliated — monitor Tehran\'s narrative',           tags:['Iran'],               u:'https://www.tehrantimes.com/',  state:true},
+  ],
+  'Latin America': [
+    {n:'InSight Crime',      t:'Intel',      s:4, f:'daily',     d:'Organized crime, gangs & cartels in Latin America',                 tags:['LatAm'],              u:'https://insightcrime.org/'},
+    {n:'El Faro',            t:'Investigative',s:4,f:'daily',    d:'Central America — El Salvador accountability journalism',           tags:['LatAm'],              u:'https://elfaro.net/en'},
+    {n:'MercoPress',         t:'News',       s:4, f:'daily',     d:'South America & South Atlantic — English coverage',                tags:['LatAm'],              u:'https://en.mercopress.com/'},
+    {n:'Buenos Aires Times', t:'News',       s:4, f:'daily',     d:'Argentina English news, Mercosur region',                          tags:['LatAm'],              u:'https://www.batimes.com.ar/'},
+    {n:'El Universal',       t:'News',       s:4, f:'daily',     d:'Mexico\'s leading daily — Spanish',                                tags:['LatAm'],              u:'https://www.eluniversal.com.mx/'},
+    {n:'MercoPress',         t:'News',       s:4, f:'daily',     d:'Southern Cone politics & economics in English',                    tags:['LatAm'],              u:'https://en.mercopress.com/'},
+    {n:'Telesur',            t:'State Media',s:3, f:'daily',     d:'Venezuela-backed pan-Latin broadcaster — Caracas line',            tags:['LatAm'],              u:'https://www.telesurenglish.net/',state:true},
+  ],
+  'Africa': [
+    {n:'Daily Maverick',     t:'Investigative',s:4,f:'daily',   d:'South Africa — award-winning investigative journalism',             tags:['S.Africa'],           u:'https://www.dailymaverick.co.za/'},
+    {n:'AllAfrica',          t:'Aggregator', s:4, f:'daily',     d:'Pan-African aggregator — 100+ countries covered',                  tags:['Africa'],             u:'https://allafrica.com/'},
+    {n:'Premium Times',      t:'Investigative',s:4,f:'daily',   d:'Nigeria investigative journalism — West Africa hub',               tags:['W.Africa'],           u:'https://www.premiumtimesng.com/'},
+    {n:'The EastAfrican',    t:'Regional',   s:4, f:'daily',     d:'East Africa business, politics & security',                        tags:['E.Africa'],           u:'https://www.theeastafrican.co.ke/'},
+    {n:'African Arguments',  t:'Analysis',   s:4, f:'daily',     d:'Politics, development & conflict across the continent',            tags:['Africa'],             u:'https://africanarguments.org/'},
+    {n:'ISS Africa',         t:'Think Tank', s:4, f:'daily',     d:'Institute for Security Studies — African peace & security',        tags:['Africa'],             u:'https://issafrica.org/'},
+    {n:'Africa News',        t:'News',       s:4, f:'daily',     d:'Pan-African network, continental English coverage',                tags:['Africa'],             u:'https://www.africanews.com/'},
+    {n:'Jeune Afrique',      t:'News',       s:4, f:'daily',     d:'Leading francophone African affairs magazine',                     tags:['Francophone'],        u:'https://www.jeuneafrique.com/'},
+    {n:'The Continent',      t:'News',       s:4, f:'daily',     d:'Independent African news distributed via WhatsApp',               tags:['Africa'],             u:'https://thecontinent.org/'},
+    {n:'Sudan Tribune',      t:'Regional',   s:4, f:'daily',     d:'Sudan & Horn of Africa — conflict & politics',                     tags:['E.Africa'],           u:'https://sudantribune.com/'},
+  ],
+  'OSINT Tools': [
+    {n:'Bellingcat',         t:'OSINT',      s:5, f:'daily',     d:'Investigative OSINT — conflicts, war crimes, disinformation',      tags:['Global'],             u:'https://www.bellingcat.com/'},
+    {n:'OSINT Framework',    t:'OSINT',      s:5, f:'monthly',   d:'500+ OSINT tools & resources organized by category',              tags:['Tools'],              u:'https://osintframework.com/'},
+    {n:'Wayback Machine',    t:'Archive',    s:5, f:'real-time', d:'Internet Archive — deleted pages, historical web snapshots',       tags:['Archives'],           u:'https://web.archive.org/'},
+    {n:'TinEye',             t:'OSINT',      s:5, f:'real-time', d:'Reverse image search — find original source of any image',        tags:['Image Intel'],        u:'https://tineye.com/'},
+    {n:'Google Earth',       t:'Geo Intel',  s:5, f:'daily',     d:'Satellite imagery, 3D maps, historical view overlay',             tags:['Satellite'],          u:'https://earth.google.com/'},
+    {n:'Oryx',               t:'Tracker',    s:4, f:'daily',     d:'Military equipment losses tracker — Ukraine war + global',        tags:['Conflict'],           u:'https://www.oryxspioenkop.com/'},
+    {n:'MarineTraffic',      t:'Map',        s:4, f:'daily',     d:'Global ship tracking — AIS live vessel positions',                tags:['Maritime'],           u:'https://www.marinetraffic.com/'},
+    {n:'ACLED',              t:'Data',       s:4, f:'daily',     d:'Armed Conflict Location & Event Data — global database',          tags:['Conflict'],           u:'https://acleddata.com/'},
+    {n:'Shodan',             t:'Cyber',      s:4, f:'daily',     d:'Internet device search engine — exposed system reconnaissance',   tags:['Cyber'],              u:'https://www.shodan.io/'},
+    {n:'VirusTotal',         t:'Cyber',      s:4, f:'real-time', d:'Scan files & URLs for malware — free multi-engine analysis',     tags:['Cyber'],              u:'https://www.virustotal.com/'},
+    {n:'LiveUAMap',          t:'Map',        s:4, f:'daily',     d:'Real-time global conflict mapping & event tracking',              tags:['Maps'],               u:'https://liveuamap.com/'},
+    {n:'FlightRadar24',      t:'Map',        s:4, f:'daily',     d:'Global air traffic — live flight positions & history',            tags:['Aviation'],           u:'https://www.flightradar24.com/'},
+  ],
+};
+const SRC_TYPE_COLOR = {
+  'News':'var(--bl)','Think Tank':'var(--pu)','OSINT':'var(--cy)','Analysis':'var(--gn)',
+  'State Media':'var(--or)','Intel':'var(--gold)','Defense':'var(--rd)','Watchdog':'var(--or)',
+  'Archive':'var(--cy)','Investigative':'var(--or)','Tracker':'var(--gn)','Map':'var(--gn)',
+  'Data':'var(--bl)','Cyber':'var(--rd)','Aggregator':'var(--bl)','Regional':'#A0B8CC',
+  'Policy':'var(--pu)','Monitor':'var(--cy)','Geo Intel':'var(--gn)',
+};
+
+// ── ENTERTAINMENT CATEGORIES ──────────────────────────────────────────────────
+const GN = q => `https://news.google.com/rss/search?q=${q.replace(/ /g,'+')}&hl=en&gl=US&ceid=US:en`;
+const ENT_CATS = [
+  // ── MEDIA ──
+  { id:'gaming',    col:'#4A9EFF', icon:'🎮', grp:'MEDIA',     label:'🎮 Gaming',
+    src:'IGN · Kotaku · Polygon · Gamespot · Eurogamer',
+    feed:'https://www.gamespot.com/feeds/mashup/',
+    gnews: GN('video games new release review gameplay') },
+
+  { id:'movies',    col:'#FF6B9D', icon:'🎬', grp:'MEDIA',     label:'🎬 Movies/TV',
+    src:'Variety · Deadline · Collider · IndieWire · ScreenRant',
+    feed:'https://collider.com/feed/',
+    gnews: GN('movies film television streaming new release') },
+
+  { id:'anime',     col:'#9B72FF', icon:'🎌', grp:'MEDIA',     label:'🎌 Anime',
+    src:'ANN · Crunchyroll · MyAnimeList · Otaku USA',
+    feed:'https://www.animenewsnetwork.com/all/rss.xml?ann-edition=us',
+    gnews: GN('anime manga new season episode crunchyroll') },
+
+  { id:'comics',    col:'#FF8C42', icon:'📚', grp:'MEDIA',     label:'📚 Comics',
+    src:'CBR · Bleeding Cool · ComicBook · AIPT',
+    feed:'https://www.cbr.com/feed/',
+    gnews: GN('comics superhero Marvel DC new issue') },
+
+  { id:'celebrity', col:'#C9A84C', icon:'⭐', grp:'MEDIA',     label:'⭐ Celebrity',
+    src:'TMZ · Page Six · People · E! News · Complex',
+    feed:'https://www.tmz.com/rss.xml',
+    gnews: GN('celebrity entertainment Hollywood gossip news') },
+
+  { id:'nba',       col:'#FF8C42', icon:'🏀', grp:'SPORTS',    label:'🏀 NBA',
+    src:'ESPN · The Athletic · Bleacher Report · HoopsHype',
+    feed:'https://hoopshype.com/feed/',
+    gnews: GN('basketball NBA trade player news') },
+
+  { id:'soccer',    col:'#00E59B', icon:'⚽', grp:'SPORTS',    label:'⚽ Soccer',
+    src:'ESPN · Goal · BBC Sport · OneFootball',
+    feed:'https://feeds.bbci.co.uk/sport/football/rss.xml',
+    gnews: GN('soccer football Premier League Champions League match') },
+
+  { id:'nfl',       col:'#4A9EFF', icon:'🏈', grp:'SPORTS',    label:'🏈 NFL',
+    src:'ESPN · CBS Sports · The Athletic · Bleacher Report',
+    feed:'https://www.cbssports.com/rss/headlines/nfl/',
+    gnews: GN('NFL football game trade draft news') },
+
+  { id:'ufc',       col:'#FF3355', icon:'🥋', grp:'SPORTS',    label:'🥋 UFC/MMA',
+    src:'MMA Fighting · Sherdog · ESPN MMA',
+    feed:'https://www.mmafighting.com/rss/current',
+    gnews: GN('UFC MMA fight card result knockout') },
+
+  { id:'boxing',    col:'#C9A84C', icon:'🥊', grp:'SPORTS',    label:'🥊 Boxing',
+    src:'BoxingScene · Ring TV · ESPN Boxing',
+    feed:'https://www.boxingscene.com/rss/boxing_news.rss',
+    gnews: GN('boxing fight heavyweight championship WBC WBO IBF') },
+
+  { id:'f1',        col:'#FF3355', icon:'🏎️', grp:'SPORTS',    label:'🏎️ F1',
+    src:'Autosport · Motorsport.com · F1.com',
+    feed:'https://www.autosport.com/rss/f1/news/',
+    gnews: GN('Formula 1 F1 Grand Prix race qualifying') },
+
+  { id:'motogp',    col:'#FF6B9D', icon:'🏍️', grp:'SPORTS',    label:'🏍️ MotoGP',
+    src:'MotoGP.com · CycleWorld · 44Teeth · Crash.net',
+    feed:'https://www.crash.net/rss/motogp',
+    gnews: GN('MotoGP WorldSBK motorcycle race championship') },
+
+  { id:'cars',      col:'#9B72FF', icon:'🚗', grp:'LIFESTYLE',  label:'🚗 Cars',
+    src:'MotorTrend · Car & Driver · Top Gear · Jalopnik',
+    feed:'https://jalopnik.com/rss',
+    gnews: GN('cars automotive supercar Lamborghini Ferrari review') },
+
+  { id:'motos',     col:'#FF8C42', icon:'🏍', grp:'LIFESTYLE',  label:'🏍 Motos',
+    src:'RideApart · RevZilla · CycleWorld · Motorcycle.com',
+    feed:'https://www.rideapart.com/feed/',
+    gnews: GN('motorcycle superbike review riding gear') },
+
+  { id:'cigars',    col:'#C9A84C', icon:'🍷', grp:'LIFESTYLE',  label:'🍷 Cigars',
+    src:'Cigar Aficionado · Half Wheel · Cigar Dojo',
+    feed:'https://halfwheel.com/feed',
+    gnews: GN('cigar premium tobacco blend review') },
+];
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let S = {
+  view: localStorage.getItem('hyk_intel_v') || 'brief',
+  srcFilter: 'All',
+  crypto: null, weather: null, fg: null, news: [],
+  ld: { crypto:true, weather:true, fg:true, news:true },
+  err: {},
+  updated: null,
+  refreshing: false,
+  // Geo map state
+  geoCountry: null, geoNews: [], geoLoading: false, geoErr: false,
+  // Entertainment state
+  entCat: localStorage.getItem('hyk_ent_cat') || 'gaming',
+  entItems: [], entLoading: false, entErr: false, entDbg: '',
+  // Travel state
+  customCities: JSON.parse(localStorage.getItem('hyk_custom_cities') || '[]'),
+  showCityForm: false,
+  travelBudget: parseFloat(localStorage.getItem('hyk_travel_budget')) || 0,
+  fx: {
+    rates: null, date: '',
+    displayCur: localStorage.getItem('hyk_fx_disp') || 'CAD',
+    boardFrom:  localStorage.getItem('hyk_fx_from') || 'CAD',
+    boardAmt:   1000,
+  },
+  xiomara: {
+    msgs: JSON.parse(localStorage.getItem('hyk_xio_msgs') || '[]'),
+    streaming: false,
+    apiKey: localStorage.getItem('hyk_xio_key') || '',
+  },
+};
+
+// ── API ────────────────────────────────────────────────────────────────────────
+async function get(url, ms=9000) {
+  const c = new AbortController();
+  const t = setTimeout(()=>c.abort(), ms);
+  try { const r = await fetch(url, {signal:c.signal}); clearTimeout(t); return r.json(); }
+  catch(e){ clearTimeout(t); throw e; }
+}
+async function fetchCrypto() {
+  S.ld.crypto=true;
+  try{ S.crypto=await get(`https://api.coingecko.com/api/v3/simple/price?ids=${COIN_IDS}&vs_currencies=usd&include_24hr_change=true`); S.err.crypto=false; }
+  catch(e){ S.err.crypto=true; }
+  S.ld.crypto=false;
+}
+async function fetchWeather() {
+  S.ld.weather=true;
+  try{ S.weather=await get('https://api.open-meteo.com/v1/forecast?latitude=45.5017&longitude=-73.5673&current_weather=true&hourly=apparent_temperature,precipitation_probability,windspeed_10m,weathercode&timezone=America%2FToronto&forecast_days=1'); S.err.weather=false; }
+  catch(e){ S.err.weather=true; }
+  S.ld.weather=false;
+}
+async function fetchFG() {
+  S.ld.fg=true;
+  try{ const d=await get('https://api.alternative.me/fng/?limit=1'); S.fg=d.data?.[0]||null; S.err.fg=false; }
+  catch(e){ S.err.fg=true; }
+  S.ld.fg=false;
+}
+async function fetchNews() {
+  S.ld.news=true;
+  try{ const d=await get('https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Ffeeds.bbci.co.uk%2Fnews%2Fworld%2Frss.xml&count=10'); S.news=d.items||[]; S.err.news=false; }
+  catch(e){ S.err.news=true; }
+  S.ld.news=false;
+}
+async function fetchAll() {
+  S.refreshing=true; render();
+  await Promise.all([fetchCrypto(), fetchWeather(), fetchFG(), fetchNews()]);
+  S.refreshing=false; S.updated=new Date(); render();
+}
+
+// ── GEO MAP ───────────────────────────────────────────────────────────────────
+let leafletMap = null;
+
+function initMap() {
+  if(leafletMap){ try{ leafletMap.remove(); }catch(e){} leafletMap=null; }
+  const el = document.getElementById('geo-map');
+  if(!el || typeof L === 'undefined') return;
+  leafletMap = L.map('geo-map', { center:[20,0], zoom:2, minZoom:2, maxZoom:10,
+    attributionControl:false, zoomControl:true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap', maxZoom:19,
+  }).addTo(leafletMap);
+  L.control.attribution({ position:'bottomright', prefix:false })
+    .addAttribution('<span style="color:var(--mu);font-size:8px">© OSM</span>')
+    .addTo(leafletMap);
+  leafletMap.on('click', e => fetchGeoClick(e.latlng.lat, e.latlng.lng));
+}
+
+async function fetchGeoClick(lat, lng) {
+  S.geoLoading = true; S.geoErr = false; S.geoNews = [];
+  updateGeoPanel();
+  try {
+    const geo = await get(`https://nominatim.openstreetmap.org/reverse?lat=${lat.toFixed(4)}&lon=${lng.toFixed(4)}&format=json`, 7000);
+    const raw = geo?.address?.country || geo?.display_name || 'Unknown';
+    S.geoCountry = raw.replace(/<[^>]*>/g,'').slice(0,60);
+    S.geoLoading = false;
+    updateGeoPanel();
+    const q = encodeURIComponent(S.geoCountry + ' news geopolitics');
+    const rssUrl = encodeURIComponent(`https://news.google.com/rss/search?q=${q}&hl=en&gl=US&ceid=US:en`);
+    const d = await get(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=10`);
+    S.geoNews = d.items || [];
+  } catch(e) { S.geoErr = true; }
+  S.geoLoading = false;
+  updateGeoPanel();
+}
+
+function updateGeoPanel() {
+  const p = document.getElementById('geo-news-panel');
+  if(p) p.innerHTML = renderGeoPanel();
+}
+
+function renderGeoPanel() {
+  if(!S.geoCountry && !S.geoLoading)
+    return `<div style="padding:28px 16px;text-align:center;color:var(--mu);font-size:10px;line-height:1.9">
+      <div style="font-size:22px;margin-bottom:8px">🌍</div>
+      <b style="color:var(--cy)">Click anywhere on the map</b><br>to see live geopolitical news<br>for that region
+    </div>`;
+  const hd = S.geoCountry ? `<div style="font-family:'Orbitron',monospace;font-size:10px;font-weight:900;color:var(--cy);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bd)">📍 ${S.geoCountry}</div>` : '';
+  if(S.geoLoading)
+    return hd + `<div style="padding:14px;text-align:center;color:var(--mu);font-size:10px">⟳ Loading news...</div>`;
+  if(S.geoErr)
+    return hd + `<div style="padding:14px;text-align:center;color:var(--rd);font-size:10px">Feed unavailable. Try again.</div>`;
+  if(!S.geoNews.length)
+    return hd + `<div style="padding:14px;text-align:center;color:var(--mu);font-size:10px">No results found.</div>`;
+  return hd + S.geoNews.slice(0,8).map(n=>`
+    <div class="ni" onclick="window.open('${n.link}','_blank')" style="cursor:pointer">
+      <div class="ni-ts">${timeAgo(n.pubDate)}</div>
+      <div class="ni-t">${n.title}</div>
+    </div>`).join('');
+}
+
+// ── ENTERTAINMENT ─────────────────────────────────────────────────────────────
+const entCache = {};
+const ENT_CACHE_MS = 10 * 60 * 1000;
+
+function entThumb(link, thumb) {
+  if(thumb) return thumb;
+  try { return 'https://logo.clearbit.com/' + new URL(link).hostname.replace('www.',''); }
+  catch { return ''; }
+}
+
+function parseXMLFeed(xml, fallbackSrc) {
+  try {
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    if(doc.querySelector('parsererror')) return [];
+    const els = [...doc.querySelectorAll('channel > item, feed > entry')];
+    return els.map(el => {
+      const txt = s => el.querySelector(s)?.textContent?.trim()||'';
+      const title   = txt('title').replace(/ - [A-Z][^-]{2,40}$/,'').trim();
+      const link    = txt('link') || el.querySelector('link')?.getAttribute('href')||'';
+      const desc    = (txt('description')||txt('summary')).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().slice(0,160);
+      const pubDate = txt('pubDate')||txt('updated')||txt('published');
+      const author  = txt('source')||txt('author')||txt('creator')||fallbackSrc;
+      const encUrl  = el.querySelector('enclosure')?.getAttribute('url')||'';
+      const medThumb= el.getElementsByTagNameNS('http://search.yahoo.com/mrss/','thumbnail')[0]?.getAttribute('url')||'';
+      const imgMatch= (txt('description')||txt('content')).match(/src=["']([^"']+\.(?:jpg|jpeg|png|webp))[^"']*["']/i);
+      const thumbnail = encUrl||medThumb||(imgMatch?imgMatch[1]:'')||'';
+      return {title,link,description:desc,pubDate,author,thumbnail};
+    }).filter(n=>n.title&&n.link);
+  } catch { return []; }
+}
+
+async function fetchEntCat(id) {
+  const cat = ENT_CATS.find(c=>c.id===id);
+  if(!cat) return;
+  const cached = entCache[id];
+  if(cached && (Date.now()-cached.ts < ENT_CACHE_MS)) {
+    S.entItems=cached.items; S.entLoading=false; S.entErr=false; updateEntGrid(); return;
+  }
+  S.entLoading=true; S.entErr=false; S.entItems=[]; S.entDbg=''; updateEntGrid();
+
+  let items=[], lastErr='';
+
+  async function tryFetch(url) {
+    // rss2json — converts XML to JSON, includes thumbnails from media: tags
+    try {
+      const d = await get('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=20', 10000);
+      if(d.status!=='error' && d.items?.length) {
+        return d.items.filter(n=>n.title&&n.link).map(n=>({
+          title:(n.title||'').replace(/ - [A-Z][^-]{2,40}$/,'').trim(),
+          link:n.link, description:(n.description||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().slice(0,160),
+          pubDate:n.pubDate||'', author:n.author||n.source||cat.src,
+          thumbnail:n.thumbnail||n.enclosure?.link||'',
+        }));
+      }
+    } catch {}
+    // corsproxy.io — raw XML
+    try {
+      const c=new AbortController(), t=setTimeout(()=>c.abort(),10000);
+      const r=await fetch('https://corsproxy.io/?'+url,{signal:c.signal});
+      clearTimeout(t);
+      const parsed=parseXMLFeed(await r.text(),cat.src);
+      if(parsed.length) return parsed;
+    } catch {}
+    // allorigins — encoded
+    try {
+      const c=new AbortController(), t=setTimeout(()=>c.abort(),10000);
+      const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url),{signal:c.signal});
+      clearTimeout(t);
+      const parsed=parseXMLFeed(await r.text(),cat.src);
+      if(parsed.length) return parsed;
+    } catch {}
+    return [];
+  }
+
+  // 1. Direct source feed — has thumbnails/images
+  if(cat.feed) { items = await tryFetch(cat.feed); lastErr = items.length ? '' : 'feed:empty'; }
+
+  // 2. Google News fallback — no images but reliable
+  if(!items.length && cat.gnews) { items = await tryFetch(cat.gnews); lastErr = items.length ? '' : 'gnews:empty'; }
+
+  items = items.slice(0,18);
+  if(!items.length){S.entErr=true;S.entDbg=lastErr;S.entItems=[];delete entCache[id];}
+  else{entCache[id]={ts:Date.now(),items};S.entItems=items;S.entErr=false;S.entDbg='';}
+  S.entLoading=false; updateEntGrid();
+}
+
+function updateEntGrid() {
+  const g = document.getElementById('ent-grid');
+  if(g) g.innerHTML = renderEntGrid();
+}
+
+
+function renderEntGrid() {
+  const cat = ENT_CATS.find(c=>c.id===S.entCat) || ENT_CATS[0];
+  if(S.entLoading) return `<div style="padding:90px 20px;text-align:center">
+    <div style="font-size:28px;animation:spin 1.2s linear infinite;display:inline-block;color:var(--gold)">◌</div>
+    <div style="font-size:10px;color:var(--mu);margin-top:12px;letter-spacing:.08em">LOADING…</div>
+  </div>`;
+  if(S.entErr) return `<div style="padding:70px 20px;text-align:center">
+    <div style="font-size:32px;margin-bottom:10px;opacity:.3">${cat.icon}</div>
+    <div style="font-size:11px;color:var(--rd);margin-bottom:6px">Feed unavailable</div>
+    ${S.entDbg?`<div style="font-size:9px;color:rgba(255,51,85,.55);margin-bottom:12px;font-family:monospace">${S.entDbg}</div>`:''}
+    <button onclick="S.entErr=false;fetchEntCat(S.entCat)" style="padding:7px 18px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:var(--rs);color:var(--gold);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.06em">↺ Retry</button>
+  </div>`;
+  if(!S.entItems.length) return `<div style="padding:70px 20px;text-align:center;color:var(--mu);font-size:10px">No items loaded yet</div>`;
+
+  const [hero, ...rest] = S.entItems;
+  const heroLink = (hero.link||'').replace(/'/g,'%27');
+  const sideItems = rest.slice(0,5);
+  const gridItems = rest.slice(5);
+
+  const heroThumb = entThumb(hero.link, hero.thumbnail);
+  const heroHtml = `
+  <div style="display:grid;grid-template-columns:1fr 295px;gap:12px;margin-bottom:14px">
+    <!-- HERO -->
+    <div class="ent-hero" onclick="window.open('${heroLink}','_blank')">
+      <div style="position:relative;height:310px;overflow:hidden">
+        <img src="${heroThumb}" style="width:100%;height:100%;object-fit:${hero.thumbnail?'cover':'contain'};padding:${hero.thumbnail?'0':'18%'};background:linear-gradient(135deg,${cat.col}18,${cat.col}06);box-sizing:border-box" loading="lazy"
+          onerror="this.onerror=null;this.src='';this.parentElement.style.background='linear-gradient(135deg,${cat.col}1a,${cat.col}06)'">
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(4,4,18,.98) 0%,rgba(4,4,18,.45) 55%,transparent 100%)"></div>
+        <div style="position:absolute;top:13px;left:13px">
+          <span style="padding:3px 10px;background:var(--gold);border-radius:3px;font-size:8px;font-weight:900;color:#060410;letter-spacing:.08em;text-transform:uppercase">${cat.label.replace(/^\S+\s/,'')}</span>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:20px 22px">
+          <div style="font-size:9px;color:rgba(201,168,76,.55);margin-bottom:6px;letter-spacing:.04em">${hero.author||cat.src} · ${timeAgo(hero.pubDate)}</div>
+          <div style="font-size:19px;font-weight:900;color:#fff;line-height:1.28;letter-spacing:-.01em">${hero.title}</div>
+          ${hero.description?`<div style="font-size:10px;color:rgba(216,232,255,.48);margin-top:7px;line-height:1.55">${hero.description.slice(0,130)}${hero.description.length>130?'…':''}</div>`:''}
+        </div>
+      </div>
+    </div>
+
+    <!-- TOP STORIES SIDEBAR -->
+    <div style="background:var(--s1);border:1px solid rgba(201,168,76,.1);border-radius:6px;overflow:hidden;display:flex;flex-direction:column">
+      <div style="padding:10px 14px;border-bottom:2px solid var(--gold);background:rgba(201,168,76,.04);flex-shrink:0">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;font-weight:900;color:var(--gold);letter-spacing:.13em">TOP STORIES</div>
+      </div>
+      ${sideItems.map(n => {
+        const lnk = (n.link||'').replace(/'/g,'%27');
+        const st = entThumb(n.link, n.thumbnail);
+        const isLogo = !n.thumbnail;
+        return `<div class="ent-story" onclick="window.open('${lnk}','_blank')">
+          <div style="border-left:3px solid ${cat.col}99;padding-left:9px;flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--tx);line-height:1.34;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title}</div>
+            <div style="font-size:9px;color:var(--mu);margin-top:4px">${n.author||cat.src} · ${timeAgo(n.pubDate)}</div>
+          </div>
+          <img src="${st}" style="width:58px;height:44px;object-fit:${isLogo?'contain':'cover'};padding:${isLogo?'6px':'0'};border-radius:4px;flex-shrink:0;background:${isLogo?cat.col+'12':'none'}" loading="lazy" onerror="this.remove()">
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  const gridHtml = gridItems.length ? `
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    ${gridItems.map((n,i) => {
+      const lnk = (n.link||'').replace(/'/g,'%27');
+      const gt = entThumb(n.link, n.thumbnail);
+      const isLogo = !n.thumbnail;
+      return `<div class="ent-card" onclick="window.open('${lnk}','_blank')" style="animation-delay:${i*.04}s">
+        <div style="height:120px;overflow:hidden;position:relative;flex-shrink:0;background:${isLogo?`linear-gradient(135deg,${cat.col}14,${cat.col}06)`:'#000'}">
+          <img src="${gt}" style="width:100%;height:100%;object-fit:${isLogo?'contain':'cover'};padding:${isLogo?'18%':'0'};box-sizing:border-box" loading="lazy"
+            onerror="this.onerror=null;this.src='';this.parentElement.innerHTML='<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:.3&quot;>${cat.icon}</div>'">
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(4,4,18,.6) 0%,transparent 55%)"></div>
+        </div>
+        <div style="padding:9px 11px;flex:1;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:11px;font-weight:700;color:var(--tx);line-height:1.37;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${n.title}</div>
+          <div style="font-size:9px;color:var(--mu)">${timeAgo(n.pubDate)}</div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>` : '';
+
+  return heroHtml + gridHtml;
+}
+
+// ── TRAVEL / FX ───────────────────────────────────────────────────────────────
+const FX_CURRENCIES = ['EUR','USD','CAD','GBP','JPY','AUD','CHF','CNY','HKD','KRW','SGD','MXN','BRL','INR','THB','MYR','IDR','PHP','HUF','CZK','PLN','TRY','ZAR','NOK','SEK','DKK','NZD','RON'];
+const FX_SYM  = {EUR:'€',USD:'$',CAD:'C$',GBP:'£',JPY:'¥',AUD:'A$',CHF:'Fr',CNY:'¥',HKD:'HK$',KRW:'₩',SGD:'S$',MXN:'$',BRL:'R$',INR:'₹',THB:'฿',MYR:'RM',IDR:'Rp',PHP:'₱',HUF:'Ft',CZK:'Kč',PLN:'zł',TRY:'₺',ZAR:'R',NOK:'kr',SEK:'kr',DKK:'kr',NZD:'NZ$',RON:'lei'};
+const FX_FLAG = {EUR:'🇪🇺',USD:'🇺🇸',CAD:'🇨🇦',GBP:'🇬🇧',JPY:'🇯🇵',AUD:'🇦🇺',CHF:'🇨🇭',CNY:'🇨🇳',HKD:'🇭🇰',KRW:'🇰🇷',SGD:'🇸🇬',MXN:'🇲🇽',BRL:'🇧🇷',INR:'🇮🇳',THB:'🇹🇭',MYR:'🇲🇾',IDR:'🇮🇩',PHP:'🇵🇭',HUF:'🇭🇺',CZK:'🇨🇿',PLN:'🇵🇱',TRY:'🇹🇷',ZAR:'🇿🇦',NOK:'🇳🇴',SEK:'🇸🇪',DKK:'🇩🇰',NZD:'🇳🇿',RON:'🇷🇴'};
+const FX_BOARD = ['USD','EUR','GBP','JPY','AUD','CHF','CNY','KRW','HKD','SGD','THB','MYR','INR','BRL','MXN','ZAR','NOK','SEK','DKK','NZD','PLN','CZK','HUF','TRY'];
+const FX_DISP_QUICK = ['CAD','USD','EUR','GBP','JPY','THB','BRL','MXN'];
+
+async function fetchFX() {
+  // CDN-hosted APIs with permissive CORS — both work from file:// origin
+  const URLS = [
+    'https://latest.currency-api.pages.dev/v1/currencies/eur.json',
+    'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/eur.json',
+  ];
+  for(const url of URLS) {
+    try {
+      const d = await get(url, 8000);
+      const raw = d?.eur;
+      if(!raw || typeof raw !== 'object') continue;
+      const rates = {};
+      for(const [k,v] of Object.entries(raw)) rates[k.toUpperCase()] = v;
+      rates['EUR'] = 1.0;
+      S.fx.rates = rates;
+      S.fx.date  = d.date || '';
+      updateFXBoard();
+      updateCityPrices();
+      return;
+    } catch(e) { /* try next URL */ }
+  }
+  const el = document.getElementById('fx-board');
+  if(el) el.innerHTML = `<div style="color:var(--rd);font-size:10px;text-align:center;padding:14px">Rates unavailable — check connection</div>`;
+}
+
+// Convert `amount` from currency `a` to `b` using EUR-base rates
+function fxConvert(amount, a, b) {
+  if(!S.fx.rates || !amount) return null;
+  const ra = a === 'EUR' ? 1 : S.fx.rates[a];
+  const rb = b === 'EUR' ? 1 : S.fx.rates[b];
+  if(!ra || !rb) return null;
+  return amount * (rb / ra);
+}
+
+function fmtFX(val, cur) {
+  if(val === null || isNaN(val)) return '—';
+  const noDecimal = ['JPY','KRW','IDR','HUF'];
+  return noDecimal.includes(cur)
+    ? Math.round(val).toLocaleString('en-US')
+    : val.toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function updateFXBoard() {
+  const el = document.getElementById('fx-board');
+  if(!el) return;
+  const from = S.fx.boardFrom;
+  const amt  = parseFloat(S.fx.boardAmt) || 0;
+  if(!S.fx.rates) {
+    el.innerHTML = `<div style="text-align:center;color:var(--mu);font-size:10px;padding:16px">⟳ Loading live rates…</div>`;
+    return;
+  }
+  if(!amt) {
+    el.innerHTML = `<div style="text-align:center;color:var(--mu);font-size:10px;padding:14px">Enter an amount above</div>`;
+    return;
+  }
+  el.innerHTML = FX_BOARD.filter(c=>c!==from).map(to => {
+    const val  = fxConvert(amt, from, to);
+    const sym  = FX_SYM[to]  || to;
+    const flag = FX_FLAG[to] || '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-bottom:1px solid var(--bd)">
+      <span style="display:flex;align-items:center;gap:5px;min-width:72px">
+        <span style="font-size:13px;line-height:1">${flag}</span>
+        <span style="font-size:9px;font-weight:800;color:var(--mu);letter-spacing:.04em">${to}</span>
+      </span>
+      <span style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--tx)">${sym} ${fmtFX(val, to)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── CITY GRID / TIER LIST ─────────────────────────────────────────────────────
+function fmtCity(cad) {
+  const dc  = S.fx.displayCur;
+  const sym = FX_SYM[dc] || dc;
+  if(dc === 'CAD' || !S.fx.rates) return `${sym}${cad.toLocaleString()}`;
+  const v = fxConvert(cad, 'CAD', dc);
+  return v !== null ? `${sym}${Math.round(v).toLocaleString()}` : `C$${cad.toLocaleString()}`;
+}
+
+function cityCard(c) {
+  const isCustom = !!c.custom;
+  const custIdx  = isCustom ? S.customCities.findIndex(x=>x===c) : -1;
+  const muT = getMUTier(c.country);
+  const muColor = muT==='S'?'var(--gn)':muT==='A'?'var(--cy)':muT==='B'?'var(--gold)':'var(--or)';
+  const muBadge = muT ? `<span title="Miss Universe ${muT}-Tier beauty ranking" style="position:absolute;top:6px;left:6px;font-size:9px;font-weight:800;color:${muColor};background:rgba(0,0,0,.35);border:1px solid ${muColor};border-radius:4px;padding:1px 5px;letter-spacing:.3px">🌹${muT}</span>` : '';
+  return `
+  <div class="col-c" style="position:relative;${isCustom?'border-color:rgba(0,207,255,.22)':''}${muT?';border-color:rgba(255,107,157,.18)':''}">
+    ${muBadge}
+    ${isCustom?`<button onclick="removeCustomCity(${custIdx})" title="Remove" style="position:absolute;top:6px;right:6px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,51,85,.12);border:1px solid rgba(255,51,85,.25);border-radius:4px;color:var(--rd);font-size:10px;font-weight:900;cursor:pointer;padding:0;line-height:1">✕</button>`:''}
+    <div class="col-hd" style="padding-right:${isCustom?'22px':'0'};padding-left:${muT?'0':'0'};margin-top:${muT?'14px':'0'}">
+      <span class="col-flag">${c.flag}</span>
+      <div>
+        <div class="col-city">${c.city}</div>
+        <div style="font-size:9px;color:var(--mu)">${c.country}</div>
+      </div>
+    </div>
+    <div class="col-total">${fmtCity(c.total)}/mo</div>
+    <div class="b ${c.total<1100?'b-gn':c.total<1600?'b-gd':c.total<2600?'b-or':'b-rd'}" style="margin-bottom:6px">${c.tag}${isCustom?' · <span style="color:var(--cy)">Custom</span>':''}</div>
+    <div class="col-row"><span>Studio/mo</span><span style="color:var(--tx)">~${fmtCity(c.studio)}</span></div>
+    <div class="col-row"><span>Food/mo</span><span style="color:var(--tx)">~${fmtCity(c.food)}</span></div>
+    <div class="col-row"><span>💑 Dating/mo</span><span style="color:#FF6B9D;font-weight:700">~${fmtCity(c.dating)}</span></div>
+    <div class="col-row"><span>Internet</span><span style="color:var(--tx)">${c.internet}</span></div>
+    <div class="col-row"><span>Safety</span><span style="color:${c.safety==='Very Safe'?'var(--gn)':c.safety==='Safe'?'var(--bl)':c.safety==='Moderate'?'var(--or)':'var(--rd)'}">${c.safety}</span></div>
+    <div class="col-row"><span>Climate</span><span style="color:var(--tx)">${c.climate}</span></div>
+  </div>`;
+}
+
+function renderCityContent() {
+  const allCities = [...CITIES, ...S.customCities].sort((a,b)=>a.total-b.total);
+  const budget = S.travelBudget || 0;
+  const noteBar = `<div style="margin-top:10px;padding:9px 11px;background:rgba(255,107,157,.05);border:1px solid rgba(255,107,157,.15);border-radius:var(--rs);font-size:9px;color:var(--mu);line-height:1.7">
+    💑 <b style="color:#FF6B9D">Dating budget</b> covers: 2 dinner dates/week + weekend activities + occasional gift + local transport. Based on local price levels × 1.37 CAD.<br>
+    💱 City costs in CAD · display currency converts at live ECB rates${S.fx.date?' ('+S.fx.date+')':''}
+  </div>`;
+
+  if(!budget) {
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${allCities.map(cityCard).join('')}</div>${noteBar}`;
+  }
+
+  // ── Tier list mode ──
+  const TIERS = [
+    { id:'S', color:'var(--gn)',  bg:'rgba(0,229,155,.07)',  bd:'rgba(0,229,155,.22)',  min:1.5,       desc:'Comfortable — 50%+ surplus' },
+    { id:'A', color:'var(--cy)',  bg:'rgba(0,207,255,.06)',  bd:'rgba(0,207,255,.18)',  min:1.2,       desc:'Fits well — 20–49% surplus' },
+    { id:'B', color:'var(--gold)',bg:'rgba(201,168,76,.06)', bd:'rgba(201,168,76,.18)', min:1.0,       desc:'On budget — 0–19% surplus'  },
+    { id:'C', color:'var(--or)', bg:'rgba(255,140,66,.06)', bd:'rgba(255,140,66,.18)', min:0.7,       desc:'Tight — covers 70–99%'       },
+    { id:'D', color:'var(--rd)', bg:'rgba(255,51,85,.06)',  bd:'rgba(255,51,85,.18)',  min:0,         desc:'Over budget — under 70%'    },
+  ];
+  const cutoffs = [1.5, 1.2, 1.0, 0.7, 0];
+
+  const withinBudget = allCities.filter(c=>{ const b=MU_BONUS[getMUTier(c.country)]||1; return budget*b>=c.total; }).length;
+  const summary = `<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:7px 10px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.12);border-radius:var(--rs);font-size:9px;flex-wrap:wrap">
+    <span>Monthly budget: <b style="color:var(--cy);font-family:'Orbitron',monospace">${fmtCity(budget)}</b></span>
+    <span>·</span>
+    <span style="color:var(--gn)">✓ <b>${withinBudget}</b> cities within budget</span>
+    <span>·</span>
+    <span style="color:var(--rd)">✕ <b>${allCities.length - withinBudget}</b> over budget</span>
+  </div>`;
+
+  const tierRows = TIERS.map((t,ti) => {
+    const maxR = ti === 0 ? Infinity : cutoffs[ti-1];
+    const cities = allCities.filter(c => {
+      const muT = getMUTier(c.country);
+      const bonus = MU_BONUS[muT] || 1.0;
+      const r = (budget * bonus) / c.total;
+      return r >= t.min && r < maxR;
+    });
+    const chips = cities.map(c => {
+      const muT = getMUTier(c.country);
+      const bonus = MU_BONUS[muT] || 1.0;
+      const effectiveRatio = (budget * bonus) / c.total;
+      const months = effectiveRatio.toFixed(1);
+      const muColor = muT==='S'?'var(--gn)':muT==='A'?'var(--cy)':muT==='B'?'var(--gold)':'var(--or)';
+      const muChip = muT ? `<div style="font-size:7px;color:${muColor};font-weight:800;letter-spacing:.2px">🌹${muT} +${Math.round((bonus-1)*100)}%</div>` : '';
+      return `<div style="padding:6px 9px;background:var(--s2);border:1px solid ${muT?'rgba(255,107,157,.22)':'var(--bd)'};border-radius:var(--rs);display:flex;flex-direction:column;gap:2px;min-width:88px">
+        <div style="font-size:10px;font-weight:700">${c.flag} ${c.city}</div>
+        <div style="font-size:8px;color:var(--mu)">${fmtCity(c.total)}/mo</div>
+        <div style="font-size:9px;color:${t.color};font-weight:800">${months}mo runway</div>
+        ${muChip}
+      </div>`;
+    }).join('');
+    return `<div style="display:flex;margin-bottom:5px;min-height:44px">
+      <div style="width:30px;background:${t.color};display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-weight:900;font-size:15px;color:#030311;border-radius:var(--rs) 0 0 var(--rs);flex-shrink:0">${t.id}</div>
+      <div style="flex:1;background:${t.bg};border:1px solid ${t.bd};border-left:none;border-radius:0 var(--rs) var(--rs) 0;${cities.length?'display:flex;flex-wrap:wrap;gap:4px;padding:5px;align-content:center':'display:flex;align-items:center;padding:0 12px'}">
+        ${cities.length ? chips : `<span style="font-size:9px;color:var(--mu);font-style:italic">${t.desc} — no cities here</span>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  return summary + tierRows + noteBar;
+}
+
+function updateCityGrid() {
+  const el = document.getElementById('city-tier-content');
+  if(el) el.innerHTML = renderCityContent();
+}
+
+function updateCityPrices() { updateCityGrid(); }  // alias — grid re-renders with current displayCur
+
+function setCityCur(c) {
+  S.fx.displayCur = c;
+  localStorage.setItem('hyk_fx_disp', c);
+  updateCityGrid();
+  const lbl = document.getElementById('fx-disp-label');
+  if(lbl) lbl.textContent = c;
+  document.querySelectorAll('.fx-cur-btn').forEach(b => {
+    const active = b.dataset.cur === c;
+    b.style.background = active ? 'rgba(0,207,255,.15)' : 'rgba(0,207,255,.04)';
+    b.style.color       = active ? 'var(--cy)'           : 'var(--mu)';
+    b.style.borderColor = active ? 'rgba(0,207,255,.3)'  : 'rgba(0,207,255,.1)';
+  });
+}
+
+// ── CITY DATABASE (built-in, no API dependency) ───────────────────────────────
+const CITY_DB = [
+  // ── Americas ──
+  {flag:'🇦🇷',city:'Buenos Aires', country:'Argentina',   studio:380, food:200, dating:250, total:580,  internet:'Fast',    safety:'Moderate',  climate:'4 seasons',        tag:'South America Gem'},
+  {flag:'🇲🇽',city:'Mexico City',  country:'Mexico',      studio:560, food:260, dating:320, total:820,  internet:'Fast',    safety:'Moderate',  climate:'Spring yr-round',  tag:'LATAM Megacity'},
+  {flag:'🇲🇽',city:'Playa del Carmen',country:'Mexico',   studio:720, food:270, dating:330, total:990,  internet:'Fast',    safety:'Moderate',  climate:'Tropical',         tag:'Beach Nomad Hub'},
+  {flag:'🇲🇽',city:'Puerto Vallarta',country:'Mexico',    studio:650, food:255, dating:315, total:905,  internet:'Fast',    safety:'Safe',      climate:'Tropical',         tag:'Pacific Beach'},
+  {flag:'🇵🇪',city:'Lima',         country:'Peru',        studio:490, food:215, dating:270, total:705,  internet:'Good',    safety:'Moderate',  climate:'Mild/Dry',         tag:'Pacific Gateway'},
+  {flag:'🇨🇴',city:'Bogotá',       country:'Colombia',    studio:520, food:235, dating:290, total:755,  internet:'Fast',    safety:'Moderate',  climate:'Cool yr-round',    tag:'Colombian Capital'},
+  {flag:'🇵🇦',city:'Panama City',  country:'Panama',      studio:780, food:280, dating:350, total:1060, internet:'Fast',    safety:'Moderate',  climate:'Tropical',         tag:'Hub of Americas'},
+  {flag:'🇧🇷',city:'São Paulo',    country:'Brazil',      studio:580, food:260, dating:320, total:840,  internet:'Fast',    safety:'Moderate',  climate:'Humid subtropical',tag:'Brazil Business'},
+  {flag:'🇧🇷',city:'Rio de Janeiro',country:'Brazil',     studio:620, food:270, dating:340, total:890,  internet:'Fast',    safety:'High Risk',  climate:'Tropical',        tag:'Cidade Maravilhosa'},
+  {flag:'🇨🇷',city:'San José',     country:'Costa Rica',  studio:640, food:260, dating:325, total:900,  internet:'Fast',    safety:'Safe',      climate:'Tropical Highland',tag:'Pura Vida'},
+  {flag:'🇵🇷',city:'San Juan',     country:'Puerto Rico', studio:980, food:380, dating:490, total:1360, internet:'Fast',    safety:'Moderate',  climate:'Tropical',         tag:'Caribbean US'},
+  // ── Southeast Asia ──
+  {flag:'🇹🇭',city:'Chiang Mai',   country:'Thailand',    studio:340, food:155, dating:195, total:495,  internet:'Fast',    safety:'Very Safe', climate:'Tropical/Mild',    tag:'Nomad Legend'},
+  {flag:'🇮🇩',city:'Bali',         country:'Indonesia',   studio:490, food:175, dating:230, total:665,  internet:'Good',    safety:'Safe',      climate:'Tropical',         tag:'Island Paradise'},
+  {flag:'🇻🇳',city:'Hanoi',        country:'Vietnam',     studio:465, food:145, dating:210, total:610,  internet:'Fast',    safety:'Very Safe', climate:'4 seasons',        tag:'Northern Vietnam'},
+  {flag:'🇵🇭',city:'Cebu',         country:'Philippines', studio:355, food:165, dating:215, total:520,  internet:'Good',    safety:'Safe',      climate:'Tropical',         tag:'Island City'},
+  {flag:'🇵🇭',city:'Manila',       country:'Philippines', studio:420, food:185, dating:240, total:605,  internet:'Good',    safety:'Moderate',  climate:'Tropical',         tag:'Philippines Capital'},
+  {flag:'🇲🇾',city:'Penang',       country:'Malaysia',    studio:500, food:175, dating:225, total:675,  internet:'Fast',    safety:'Safe',      climate:'Tropical',         tag:'Food Paradise'},
+  {flag:'🇸🇬',city:'Singapore',    country:'Singapore',   studio:2300,food:600, dating:800, total:2900, internet:'Fast',    safety:'Very Safe', climate:'Tropical',         tag:'Asia Financial Hub'},
+  {flag:'🇯🇵',city:'Osaka',        country:'Japan',       studio:990, food:400, dating:510, total:1390, internet:'Fast',    safety:'Very Safe', climate:'4 seasons',        tag:"Japan's Kitchen"},
+  // ── Europe ──
+  {flag:'🇵🇹',city:'Lisbon',       country:'Portugal',    studio:1100,food:360, dating:460, total:1460, internet:'Fast',    safety:'Very Safe', climate:'Mediterranean',     tag:'Atlantic EU Hub'},
+  {flag:'🇵🇹',city:'Porto',        country:'Portugal',    studio:900, food:320, dating:410, total:1220, internet:'Fast',    safety:'Very Safe', climate:'Mild Atlantic',     tag:'Affordable Portugal'},
+  {flag:'🇵🇹',city:'Madeira',      country:'Portugal',    studio:850, food:300, dating:390, total:1150, internet:'Fast',    safety:'Very Safe', climate:'Mild yr-round',    tag:'Atlantic Island'},
+  {flag:'🇪🇸',city:'Barcelona',    country:'Spain',       studio:1350,food:430, dating:550, total:1780, internet:'Fast',    safety:'Safe',      climate:'Mediterranean',     tag:'Catalan Capital'},
+  {flag:'🇪🇸',city:'Madrid',       country:'Spain',       studio:1200,food:390, dating:500, total:1590, internet:'Fast',    safety:'Safe',      climate:'Dry Continental',   tag:'Spanish Capital'},
+  {flag:'🇬🇷',city:'Athens',       country:'Greece',      studio:700, food:330, dating:420, total:1030, internet:'Fast',    safety:'Safe',      climate:'Mediterranean',     tag:'Ancient & Modern'},
+  {flag:'🇩🇪',city:'Berlin',       country:'Germany',     studio:1350,food:420, dating:540, total:1770, internet:'Fast',    safety:'Safe',      climate:'Continental',       tag:'German Capital'},
+  {flag:'🇵🇱',city:'Warsaw',       country:'Poland',      studio:800, food:295, dating:380, total:1095, internet:'Fast',    safety:'Safe',      climate:'Continental',       tag:'Eastern EU Hub'},
+  {flag:'🇵🇱',city:'Kraków',       country:'Poland',      studio:630, food:260, dating:330, total:890,  internet:'Fast',    safety:'Safe',      climate:'Continental',       tag:'Cultural Capital'},
+  {flag:'🇨🇿',city:'Prague',       country:'Czech Republic',studio:870,food:330,dating:420, total:1200, internet:'Fast',    safety:'Very Safe', climate:'Continental',       tag:'EU Hidden Gem'},
+  {flag:'🇷🇸',city:'Belgrade',     country:'Serbia',      studio:460, food:255, dating:320, total:715,  internet:'Fast',    safety:'Safe',      climate:'Continental',       tag:'Balkan Base'},
+  {flag:'🇧🇬',city:'Sofia',        country:'Bulgaria',    studio:430, food:240, dating:305, total:670,  internet:'Fast',    safety:'Safe',      climate:'Continental',       tag:'Budget EU'},
+  {flag:'🇷🇴',city:'Bucharest',    country:'Romania',     studio:530, food:265, dating:335, total:795,  internet:'Fast',    safety:'Safe',      climate:'Continental',       tag:'Romania Capital'},
+  {flag:'🇭🇷',city:'Split',        country:'Croatia',     studio:790, food:325, dating:415, total:1115, internet:'Fast',    safety:'Safe',      climate:'Mediterranean',     tag:'Adriatic Coast'},
+  {flag:'🇸🇰',city:'Bratislava',   country:'Slovakia',    studio:720, food:285, dating:365, total:1005, internet:'Fast',    safety:'Very Safe', climate:'Continental',       tag:'Danube Capital'},
+  {flag:'🇪🇪',city:'Tallinn',      country:'Estonia',     studio:880, food:340, dating:430, total:1220, internet:'Fast',    safety:'Very Safe', climate:'Nordic',            tag:'Digital EU'},
+  // ── Middle East ──
+  {flag:'🇦🇪',city:'Dubai',        country:'UAE',         studio:2200,food:540, dating:720, total:2740, internet:'Fast',    safety:'Very Safe', climate:'Hot Desert',        tag:'Gulf Megacity'},
+  {flag:'🇦🇪',city:'Abu Dhabi',    country:'UAE',         studio:1900,food:500, dating:660, total:2400, internet:'Fast',    safety:'Very Safe', climate:'Hot Desert',        tag:'UAE Capital'},
+  {flag:'🇹🇷',city:'Istanbul',     country:'Turkey',      studio:370, food:195, dating:255, total:565,  internet:'Fast',    safety:'Moderate',  climate:'Mediterranean/Continental',tag:'Crossroads of Worlds'},
+  {flag:'🇹🇷',city:'Antalya',      country:'Turkey',      studio:310, food:175, dating:225, total:485,  internet:'Good',    safety:'Safe',      climate:'Mediterranean',     tag:'Turkish Riviera'},
+  {flag:'🇦🇲',city:'Yerevan',      country:'Armenia',     studio:380, food:185, dating:235, total:565,  internet:'Fast',    safety:'Safe',      climate:'Continental',       tag:'Caucasus Gem'},
+  // ── Africa ──
+  {flag:'🇲🇦',city:'Casablanca',   country:'Morocco',     studio:430, food:200, dating:255, total:630,  internet:'Good',    safety:'Safe',      climate:'Mediterranean',     tag:'Morocco Business'},
+  {flag:'🇲🇦',city:'Marrakech',    country:'Morocco',     studio:380, food:185, dating:235, total:565,  internet:'Good',    safety:'Safe',      climate:'Semi-arid',         tag:'Red City'},
+  {flag:'🇿🇦',city:'Cape Town',    country:'South Africa',studio:660, food:285, dating:360, total:945,  internet:'Fast',    safety:'Moderate',  climate:'Mediterranean',     tag:'Mother City'},
+  {flag:'🇳🇬',city:'Lagos',        country:'Nigeria',     studio:520, food:240, dating:300, total:760,  internet:'Good',    safety:'Moderate',  climate:'Tropical',          tag:'Africa Business'},
+  {flag:'🇹🇿',city:'Zanzibar',     country:'Tanzania',    studio:420, food:185, dating:235, total:605,  internet:'Good',    safety:'Safe',      climate:'Tropical Island',   tag:'Spice Island'},
+  // ── East Asia ──
+  {flag:'🇯🇵',city:'Tokyo',        country:'Japan',       studio:1350,food:470, dating:600, total:1820, internet:'Fast',    safety:'Very Safe', climate:'4 seasons',         tag:'Japan Megacity'},
+  {flag:'🇰🇷',city:'Seoul',        country:'South Korea', studio:1100,food:395, dating:510, total:1495, internet:'Fast',    safety:'Very Safe', climate:'4 seasons',         tag:'Korean Capital'},
+  {flag:'🇹🇼',city:'Taipei',       country:'Taiwan',      studio:840, food:350, dating:445, total:1190, internet:'Fast',    safety:'Very Safe', climate:'Subtropical',       tag:'Taiwan Tech Hub'},
+  // ── South Asia ──
+  {flag:'🇮🇳',city:'Bangalore',    country:'India',       studio:385, food:160, dating:210, total:545,  internet:'Fast',    safety:'Safe',      climate:'Mild yr-round',     tag:'India Tech Hub'},
+  {flag:'🇮🇳',city:'Goa',          country:'India',       studio:345, food:165, dating:215, total:510,  internet:'Good',    safety:'Safe',      climate:'Tropical Beach',    tag:'India Beach'},
+  {flag:'🇮🇳',city:'Mumbai',       country:'India',       studio:590, food:215, dating:275, total:805,  internet:'Fast',    safety:'Safe',      climate:'Tropical',          tag:'India Megacity'},
+  // ── Oceania ──
+  {flag:'🇦🇺',city:'Melbourne',    country:'Australia',   studio:1920,food:580, dating:740, total:2500, internet:'Fast',    safety:'Very Safe', climate:'Temperate',         tag:'Australia Hub'},
+  {flag:'🇦🇺',city:'Brisbane',     country:'Australia',   studio:1650,food:510, dating:650, total:2160, internet:'Fast',    safety:'Very Safe', climate:'Subtropical',       tag:'QLD Capital'},
+  {flag:'🇳🇿',city:'Auckland',     country:'New Zealand', studio:1980,food:540, dating:690, total:2520, internet:'Fast',    safety:'Very Safe', climate:'Temperate',         tag:'NZ Gateway'},
+];
+
+// ── Miss Universe Beauty Index ────────────────────────────────────────────────
+const MU_TIER = {
+  'Venezuela':          'S',
+  'USA':                'S',
+  'Philippines':        'S',
+  'Mexico':             'S',
+  'Brazil':             'S',
+  'Puerto Rico':        'S',
+  'Colombia':           'A',
+  'India':              'A',
+  'Thailand':           'A',
+  'Australia':          'A',
+  'Nigeria':            'A',
+  'South Korea':        'A',
+  'Japan':              'A',
+  'Dominican Republic': 'B',
+  'Jamaica':            'B',
+  'Sweden':             'B',
+  'South Africa':       'B',
+  'Spain':              'B',
+  'Indonesia':          'B',
+  'Ukraine':            'B',
+  'Singapore':          'B',
+  'Turkey':             'B',
+  'Argentina':          'B',
+  'Tanzania':           'C',
+  'Denmark':            'C',
+  'Norway':             'C',
+  'Finland':            'C',
+  'Israel':             'C',
+  'France':             'C',
+  'Ethiopia':           'C',
+  'Morocco':            'C',
+  'Vietnam':            'C',
+  'Malaysia':           'C',
+};
+const MU_BONUS = { S: 1.15, A: 1.10, B: 1.07, C: 1.03 };
+function getMUTier(country) { return MU_TIER[country] || null; }
+
+let _csTimer = null;
+let _dbResults = [];
+
+function debounceCitySearch(q) {
+  clearTimeout(_csTimer);
+  const el = document.getElementById('cf-results');
+  if(!el) return;
+  if(q.length < 1) { el.innerHTML = ''; return; }
+  _csTimer = setTimeout(() => localCitySearch(q), 200);
+}
+
+function localCitySearch(q) {
+  const el = document.getElementById('cf-results');
+  if(!el) return;
+  const lq = q.toLowerCase();
+  // Also search existing CITIES so they appear in autocomplete
+  const allDB = [...CITY_DB, ...CITIES.filter(c=>c.city!=='Montréal')];
+  _dbResults = allDB.filter(c =>
+    c.city.toLowerCase().includes(lq) || c.country.toLowerCase().includes(lq)
+  ).slice(0, 8);
+  if(!_dbResults.length) {
+    el.innerHTML = `<div style="padding:5px 8px;font-size:9px;color:var(--mu)">Not in database — fill fields manually below</div>`;
+    document.getElementById('cf-fields').style.display = 'block';
+    return;
+  }
+  el.innerHTML = `<div style="border:1px solid var(--bd);border-radius:var(--rs);overflow:hidden;margin-top:3px;box-shadow:0 6px 20px rgba(0,0,0,.5)">` +
+    _dbResults.map((c,i) => `
+      <div onclick="selectFromDB(${i})"
+        onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--s2)'"
+        style="padding:7px 10px;cursor:pointer;font-size:10px;background:var(--s2);border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center">
+        <span>${c.flag} <b>${c.city}</b>, ${c.country}</span>
+        <span style="font-size:8px;color:var(--mu)">${c.tag}</span>
+      </div>`).join('') + `</div>`;
+}
+
+function selectFromDB(i) {
+  const c = _dbResults[i];
+  if(!c) return;
+  // Fill search input
+  const srch = document.getElementById('cf-search');
+  if(srch) srch.value = `${c.city}, ${c.country}`;
+  // Hide results
+  const res = document.getElementById('cf-results');
+  if(res) res.innerHTML = '';
+  // Populate all fields instantly
+  setV('cf-flag',    c.flag);
+  setV('cf-city',    c.city);
+  setV('cf-country', c.country);
+  setV('cf-tag',     c.tag);
+  setV('cf-studio',  c.studio);
+  setV('cf-food',    c.food);
+  setV('cf-dating',  c.dating);
+  setV('cf-climate', c.climate);
+  const inet = document.getElementById('cf-internet');
+  if(inet) inet.value = c.internet;
+  const safe = document.getElementById('cf-safety');
+  if(safe) safe.value = c.safety;
+  // Show fields + status
+  document.getElementById('cf-fields').style.display = 'block';
+  const st = document.getElementById('cf-status');
+  if(st) st.innerHTML = `<span style="color:var(--gn)">✓ Auto-filled — studio, food, dating, safety, climate all set · review & adjust then save</span>`;
+}
+
+function setV(id, v) { const el = document.getElementById(id); if(el) el.value = v; }
+
+function saveCityForm() {
+  const v = id => document.getElementById(id)?.value;
+  const city    = (v('cf-city')||'').trim();
+  const country = (v('cf-country')||'').trim();
+  if(!city || !country) { alert('City and Country are required.'); return; }
+  const studio = parseInt(v('cf-studio')||0, 10) || 0;
+  const food   = parseInt(v('cf-food')||0,   10) || 0;
+  const dating = parseInt(v('cf-dating')||0, 10) || 0;
+  S.customCities.push({
+    flag:    (v('cf-flag')||'').trim() || '🏙️',
+    city, country,
+    tag:     (v('cf-tag')||'').trim() || 'Custom',
+    studio, food, dating, total: studio + food,
+    internet: v('cf-internet') || 'Fast',
+    safety:   v('cf-safety')   || 'Safe',
+    climate:  (v('cf-climate')||'').trim() || '—',
+    custom: true,
+  });
+  localStorage.setItem('hyk_custom_cities', JSON.stringify(S.customCities));
+  S.showCityForm = false;
+  render();
+}
+
+function removeCustomCity(i) {
+  S.customCities.splice(i, 1);
+  localStorage.setItem('hyk_custom_cities', JSON.stringify(S.customCities));
+  render();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function timeAgo(d) {
+  const diff = Math.floor((Date.now()-new Date(d))/60000);
+  if(diff<1) return 'just now';
+  if(diff<60) return `${diff}m ago`;
+  if(diff<1440) return `${Math.floor(diff/60)}h ago`;
+  return `${Math.floor(diff/1440)}d ago`;
+}
+function fmtPx(n) {
+  if(n>=10000) return '$'+Math.round(n/1000)+'k';
+  if(n>=1000) return '$'+n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+  if(n>=1) return '$'+n.toFixed(2);
+  return '$'+n.toFixed(4);
+}
+function wxIcon(code){ return (WX[code]||['🌡️','Unknown']); }
+function wxColor(t){ return t<0?'#88CCFF':t<10?'#AADDFF':t>28?'var(--or)':'var(--gn)'; }
+function getHourIdx(){ return new Date().getHours(); }
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  if(leafletMap){ try{ leafletMap.remove(); }catch(e){} leafletMap=null; }
+  document.getElementById('app').innerHTML = `
+  <div class="hdr">
+    <div class="logo">HYK <em>Intelligence Terminal</em></div>
+    <div class="tabs">
+      ${['brief','geo','markets','montreal','travel','xiomara','career','entertainment','sources'].map(v=>`
+        <button class="tab${S.view===v?' active':''}" data-v="${v}" style="${v==='xiomara'?`${S.view===v?'':'background:rgba(255,107,157,.06);border:1px solid rgba(255,107,157,.18);'}color:${S.view===v?'#FF6B9D':'rgba(255,107,157,.7)'}`:''}">${{brief:'⚡ Brief',geo:'🌍 Geo',markets:'📈 Markets',montreal:'🏙️ MTL',travel:'✈️ Travel',xiomara:'🌹 Xiomara',career:'💼 Career',entertainment:'🎮 Entertain',sources:'📡 Sources'}[v]}</button>
+      `).join('')}
+    </div>
+    <div class="hdr-r">
+      <div class="sdots" title="API status: Weather · Crypto · News">
+        <span class="sd ${S.err.weather?'sd-err':S.ld.weather?'sd-ld':'sd-ok'}"></span>
+        <span class="sd ${S.err.crypto?'sd-err':S.ld.crypto?'sd-ld':'sd-ok'}"></span>
+        <span class="sd ${S.err.news?'sd-err':S.ld.news?'sd-ld':'sd-ok'}"></span>
+      </div>
+      <button class="rbtn${S.refreshing?' spin':''}" id="rbtn">↺</button>
+      <div><div class="hdr-clock" id="hdr-clk">--:--:--</div><div class="hdr-date" id="hdr-dt"></div></div>
+    </div>
+  </div>
+  <div class="main" id="main">
+    ${ S.view==='brief'         ? tBrief()         :
+       S.view==='geo'           ? tGeo()           :
+       S.view==='markets'       ? tMarkets()       :
+       S.view==='montreal'      ? tMontreal()      :
+       S.view==='travel'        ? tTravel()        :
+       S.view==='xiomara'       ? tXiomara()       :
+       S.view==='sources'       ? tSources()       :
+       S.view==='entertainment' ? tEntertainment() : tCareer() }
+  </div>`;
+  startClock();
+  if(S.view==='geo') initMap();
+  if(S.view==='entertainment') fetchEntCat(S.entCat);
+  if(S.view==='travel') { updateFXBoard(); updateCityPrices(); if(!S.fx.rates) fetchFX(); }
+  if(S.view==='xiomara') { setTimeout(renderXioChat, 0); }
+}
+
+// ── BRIEF ─────────────────────────────────────────────────────────────────────
+function tBrief() {
+  const cw = S.weather?.current_weather;
+  const hi = getHourIdx();
+  const feel = S.weather?.hourly?.apparent_temperature?.[hi];
+  const prec = S.weather?.hourly?.precipitation_probability?.[hi];
+  const wind = S.weather?.hourly?.windspeed_10m?.[hi];
+  const [wxIco, wxTxt] = cw ? wxIcon(cw.weathercode) : ['—','—'];
+  const btc = S.crypto?.bitcoin;
+  const eth = S.crypto?.ethereum;
+  const sol = S.crypto?.solana;
+  const fg = S.fg;
+  const fgm = fg ? fgMeta(parseInt(fg.value)) : null;
+
+  return `
+  <div class="g3">
+    <div class="card">
+      <div class="ct"><div class="ctd"></div>Montréal — Live Weather</div>
+      ${cw ? `
+        <div class="wx-main">
+          <div class="wx-icon">${wxIco}</div>
+          <div>
+            <div class="wx-temp" style="color:${wxColor(cw.temperature)}">${Math.round(cw.temperature)}°C</div>
+            <div class="wx-cond">${wxTxt}</div>
+          </div>
+        </div>
+        <div class="wx-row"><span class="wx-lbl">Feels like</span><span>${feel!==undefined?Math.round(feel)+'°C':'--'}</span></div>
+        <div class="wx-row"><span class="wx-lbl">Wind</span><span>${wind!==undefined?Math.round(wind)+' km/h':'--'}</span></div>
+        <div class="wx-row"><span class="wx-lbl">Precipitation</span><span>${prec!==undefined?prec+'%':'--'}</span></div>
+        <div class="wx-row"><span class="wx-lbl">Wind (raw)</span><span>${cw.windspeed} km/h</span></div>
+      ` : `<div class="sh" style="height:60px;margin:8px 0"></div><div class="sh" style="height:14px;margin:4px 0;width:70%"></div>`}
+    </div>
+
+    <div class="card">
+      <div class="ct"><div class="ctd" style="background:var(--gold)"></div>Crypto Pulse — Live</div>
+      ${btc ? `
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-family:'Orbitron',monospace;font-size:9px;color:var(--cy)">BTC</span>
+            <span style="font-family:'Orbitron',monospace;font-size:19px;font-weight:900">${fmtPx(btc.usd)}</span>
+          </div>
+          <div style="text-align:right;font-size:10px;${btc.usd_24h_change>=0?'color:var(--gn)':'color:var(--rd)'}">
+            ${btc.usd_24h_change>=0?'▲':'▼'} ${Math.abs(btc.usd_24h_change).toFixed(2)}% (24h)
+          </div>
+        </div>
+        <div class="div"></div>
+        ${[['eth',eth],['sol',sol]].map(([k,c])=> c ? `
+        <div class="cr">
+          <span class="cr-sym">${COINS[k==='eth'?'ethereum':'solana'].sym}</span>
+          <span class="cr-name">${COINS[k==='eth'?'ethereum':'solana'].name}</span>
+          <span class="cr-px">${fmtPx(c.usd)}</span>
+          <span class="cr-ch ${c.usd_24h_change>=0?'up':'dn'}">${c.usd_24h_change>=0?'▲':'▼'}${Math.abs(c.usd_24h_change).toFixed(1)}%</span>
+        </div>` : '').join('')}
+      ` : `<div class="sh" style="height:50px;margin:8px 0"></div><div class="sh" style="height:20px;margin:4px 0"></div><div class="sh" style="height:20px;margin:4px 0"></div>`}
+    </div>
+
+    <div class="card">
+      <div class="ct"><div class="ctd" style="background:var(--pu)"></div>Fear & Greed Index</div>
+      ${fg ? `
+        <div class="fg-wrap">
+          ${buildGauge(parseInt(fg.value))}
+          <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:${fgm.color};margin-top:2px">${fg.value}</div>
+          <div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${fgm.color};margin-top:2px">${fgm.label}</div>
+          <div style="width:100%;margin-top:10px">
+            <div style="display:flex;gap:2px;height:4px;border-radius:2px;overflow:hidden">
+              ${FG_ZONES.map(z=>`<div style="flex:${z[1]-z[0]+1};background:${z[2]};opacity:${parseInt(fg.value)>=z[0]&&parseInt(fg.value)<=z[1]?1:0.18}"></div>`).join('')}
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--mu);margin-top:3px"><span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span></div>
+          </div>
+          <div style="font-size:9px;color:var(--mu);margin-top:8px">Crypto market sentiment</div>
+        </div>
+      ` : `<div style="text-align:center;padding:28px;color:var(--mu);font-size:10px">Loading...</div>`}
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ct"><div class="ctd" style="background:var(--or)"></div>World Headlines — BBC</div>
+      ${S.news.length ? `
+        <div style="overflow-y:auto;max-height:230px">
+          ${S.news.slice(0,7).map(n=>`
+          <div class="ni" onclick="window.open('${n.link}','_blank')">
+            <div class="ni-ts">${timeAgo(n.pubDate)}</div>
+            <div class="ni-t">${n.title}</div>
+          </div>`).join('')}
+        </div>
+      ` : S.err.news ? `<div style="padding:12px;color:var(--mu);font-size:10px;text-align:center">News unavailable — check connection</div>` : `${[1,2,3,4].map(()=>`<div class="sh" style="height:28px;margin:6px 0"></div>`).join('')}`}
+    </div>
+
+    <div class="card">
+      <div class="ct"><div class="ctd" style="background:var(--gn)"></div>Intelligence Tools</div>
+      ${TOOLS.map(t=>`
+        <button class="tb" onclick="window.open('${t.url}','_blank')">
+          <div class="tb-icon">${t.icon}</div>
+          <div><div class="tb-name">${t.name}</div><div class="tb-desc">${t.desc}</div></div>
+          <span class="tb-arrow">↗</span>
+        </button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function buildGauge(val) {
+  const r=46, hc=Math.PI*r;
+  const fill=(val/100)*hc, offset=hc-fill;
+  const fgm=fgMeta(val);
+  const ar=(Math.PI*(1-val/100));
+  const cx=65,cy=66,nl=42;
+  const nx=cx+Math.cos(ar)*nl, ny=cy-Math.sin(ar)*nl;
+  return `<svg width="130" height="78" viewBox="0 0 130 78">
+    <path d="M 10 68 A 55 55 0 0 1 120 68" fill="none" stroke="var(--s2)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M 10 68 A 55 55 0 0 1 120 68" fill="none" stroke="${fgm.color}" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${(Math.PI*(r+(9/2))).toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"/>
+    <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="rgba(216,232,255,.85)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="3.5" fill="rgba(216,232,255,.85)"/>
+  </svg>`;
+}
+
+// ── GEO ───────────────────────────────────────────────────────────────────────
+function tGeo() {
+  return `
+  <div style="display:grid;grid-template-columns:3fr 2fr;gap:12px">
+
+    <!-- Interactive Map Panel -->
+    <div class="card" style="display:flex;flex-direction:column;gap:0">
+      <div class="ct">
+        <div class="ctd" style="background:var(--gn)"></div>
+        Interactive World Map
+        <span style="margin-left:auto;font-size:9px;color:var(--mu)">Click any location → live geopolitical news</span>
+      </div>
+      <div id="geo-map" style="border-radius:0 0 var(--r) var(--r)"></div>
+      <div style="padding:7px 12px;background:var(--s2);border-radius:0 0 var(--r) var(--r);border-top:1px solid var(--bd);display:flex;gap:10px;align-items:center">
+        <span style="font-size:9px;color:var(--mu)">🗺️ Drag · Scroll to zoom · Click for news</span>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          ${[TOOLS[0],TOOLS[1]].map(t=>`
+            <button onclick="window.open('${t.url}','_blank')" style="padding:4px 9px;background:var(--s3);border:1px solid var(--bd);border-radius:var(--rs);color:var(--mu);font-size:9px;font-weight:700;cursor:pointer">${t.icon} ${t.name.split(' ')[0]} ↗</button>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: News + Regions -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="flex:1">
+        <div class="ct">
+          <div class="ctd" style="background:var(--or)"></div>
+          ${S.geoCountry ? `<span style="color:var(--cy)">📍 ${S.geoCountry}</span>` : 'Region News'}
+        </div>
+        <div id="geo-news-panel" style="overflow-y:auto;max-height:310px">
+          ${renderGeoPanel()}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ct"><div class="ctd" style="background:var(--pu)"></div>Region Intelligence</div>
+        <div style="overflow-y:auto;max-height:175px">
+          ${REGIONS.map(r=>`
+            <div class="rgn">
+              <div class="rgn-hd">
+                <span style="font-size:14px">${r.flag}</span>
+                <span class="rgn-name">${r.name}</span>
+              </div>
+              <div class="rgn-tags">${r.tags.map(t=>`<span class="b b-cy">${t}</span>`).join('')}</div>
+              <div class="rgn-desc">${r.desc}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+  </div>`;
+}
+
+// ── MARKETS ───────────────────────────────────────────────────────────────────
+function tMarkets() {
+  const coins = Object.entries(COINS);
+  const fg = S.fg;
+  const fgm = fg ? fgMeta(parseInt(fg.value)) : null;
+  return `
+  <div class="g2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="ct"><div class="ctd" style="background:var(--gold)"></div>Crypto — Live Prices (CoinGecko)</div>
+      ${S.crypto ? coins.map(([id,meta])=>{
+        const d=S.crypto[id];
+        if(!d) return '';
+        return `<div class="cr">
+          <span class="cr-sym">${meta.sym}</span>
+          <span class="cr-name">${meta.name}</span>
+          <span class="cr-px">${fmtPx(d.usd)}</span>
+          <span class="cr-ch ${d.usd_24h_change>=0?'up':'dn'}">${d.usd_24h_change>=0?'▲':'▼'}${Math.abs(d.usd_24h_change).toFixed(2)}%</span>
+        </div>`;
+      }).join('') : `${[1,2,3,4,5,6,7,8].map(()=>`<div class="sh" style="height:22px;margin:4px 0"></div>`).join('')}`}
+      ${S.err.crypto?`<div style="font-size:10px;color:var(--rd);margin-top:8px;text-align:center">API error — prices unavailable</div>`:''}
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct"><div class="ctd" style="background:var(--pu)"></div>Market Sentiment</div>
+        ${fg ? `
+          <div class="fg-wrap">
+            ${buildGauge(parseInt(fg.value))}
+            <div style="font-family:'Orbitron',monospace;font-size:24px;font-weight:900;color:${fgm.color}">${fg.value}</div>
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${fgm.color};margin:2px 0 10px">${fgm.label}</div>
+            <div style="width:100%">
+              <div class="pb"><div class="pbf" style="width:${fg.value}%;background:${fgm.color}"></div></div>
+              <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--mu);margin-top:3px"><span>0 — Fear</span><span>50 — Neutral</span><span>100 — Greed</span></div>
+            </div>
+            <div style="font-size:9px;color:var(--mu);margin-top:8px;text-align:center">Updated: ${fg.timestamp ? new Date(parseInt(fg.timestamp)*1000).toLocaleDateString() : '--'}</div>
+          </div>
+        ` : `<div style="text-align:center;padding:20px;color:var(--mu);font-size:10px">Loading...</div>`}
+      </div>
+
+      <div class="card">
+        <div class="ct"><div class="ctd" style="background:var(--bl)"></div>Charts & Analysis</div>
+        ${[TOOLS[2],
+           {icon:'📉',name:'CoinGecko',desc:'Crypto market caps & data',url:'https://www.coingecko.com/'},
+           {icon:'🪙',name:'Gold Price',desc:'Gold & silver spot prices',url:'https://goldprice.org/'},
+           {icon:'🏦',name:'Yahoo Finance',desc:'Stocks, ETFs, global markets',url:'https://finance.yahoo.com/'},
+        ].map(t=>`<button class="tb" onclick="window.open('${t.url}','_blank')"><div class="tb-icon">${t.icon}</div><div><div class="tb-name">${t.name}</div><div class="tb-desc">${t.desc}</div></div><span class="tb-arrow">↗</span></button>`).join('')}
+        <div style="margin-top:10px;padding:10px;background:var(--s2);border-radius:var(--rs);font-size:9px;color:var(--mu);line-height:1.7">
+          <span class="b b-gd" style="display:block;margin-bottom:6px">Your 10% Rule — Quick Math</span>
+          5% Gold/Silver → $110/mo · $1,320/yr<br>
+          5% Stocks/Crypto → $110/mo · $1,320/yr<br>
+          Combined → <span style="color:var(--gold)">$2,640/yr into assets</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── MONTREAL ──────────────────────────────────────────────────────────────────
+function tMontreal() {
+  const cw = S.weather?.current_weather;
+  const hi = getHourIdx();
+  const hourly = S.weather?.hourly;
+  const hours = hourly?.time?.slice(hi, hi+6)||[];
+  const [wxIco,wxTxt] = cw ? wxIcon(cw.weathercode) : ['—','—'];
+
+  return `
+  <div class="g2">
+    <div class="card">
+      <div class="ct"><div class="ctd"></div>Montréal — Weather Detail</div>
+      ${cw ? `
+        <div class="wx-main">
+          <div class="wx-icon">${wxIco}</div>
+          <div>
+            <div class="wx-temp" style="color:${wxColor(cw.temperature)}">${Math.round(cw.temperature)}°C</div>
+            <div class="wx-cond">${wxTxt}</div>
+          </div>
+        </div>
+        <div class="div"></div>
+        <div class="wx-row"><span class="wx-lbl">Feels like</span><span>${hourly?.apparent_temperature?.[hi]!==undefined?Math.round(hourly.apparent_temperature[hi])+'°C':'--'}</span></div>
+        <div class="wx-row"><span class="wx-lbl">Wind speed</span><span>${hourly?.windspeed_10m?.[hi]!==undefined?Math.round(hourly.windspeed_10m[hi])+' km/h':'--'}</span></div>
+        <div class="wx-row"><span class="wx-lbl">Precipitation chance</span><span>${hourly?.precipitation_probability?.[hi]!==undefined?hourly.precipitation_probability[hi]+'%':'--'}</span></div>
+        <div class="wx-row"><span class="wx-lbl">Wind (current)</span><span>${Math.round(cw.windspeed)} km/h</span></div>
+        <div class="sec"><span>Next 6 hours</span></div>
+        <div style="display:flex;gap:6px">
+          ${hours.map((_,i)=>{
+            const idx=hi+i;
+            const t=hourly?.temperature_2m?.[idx];
+            const code=hourly?.weathercode?.[idx];
+            const [ico]=code!==undefined?wxIcon(code):['—'];
+            const h=hourly?.time?.[idx];
+            return `<div style="flex:1;text-align:center;background:var(--s2);border-radius:var(--rs);padding:7px 4px">
+              <div style="font-size:9px;color:var(--mu);margin-bottom:4px">${h?h.slice(11,16):'--'}</div>
+              <div style="font-size:14px;margin-bottom:4px">${ico}</div>
+              <div style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:${t!==undefined?wxColor(t):'var(--mu)'}">${t!==undefined?Math.round(t)+'°':'--'}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      ` : `<div class="sh" style="height:80px;margin:8px 0"></div>`}
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct"><div class="ctd" style="background:var(--gn)"></div>City Services — Live Links</div>
+        ${[
+          TOOLS[4], TOOLS[5], TOOLS[6],
+          {icon:'🚑',name:'MTL Urgences-santé',desc:'Emergency medical dispatch status',url:'https://www.urgences-sante.qc.ca/'},
+          {icon:'🏙️',name:'Ville de Montréal',desc:'City news & service alerts',url:'https://montreal.ca/en/articles'},
+          {icon:'🎭',name:'Tourisme Montréal',desc:'Events & festivals calendar',url:'https://www.mtl.org/en'},
+        ].map(t=>`<button class="tb" onclick="window.open('${t.url}','_blank')"><div class="tb-icon">${t.icon}</div><div><div class="tb-name">${t.name}</div><div class="tb-desc">${t.desc}</div></div><span class="tb-arrow">↗</span></button>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="ct"><div class="ctd" style="background:var(--gold)"></div>Local Intelligence Notes</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${[
+            { tag:'STM', note:'Orange Line closures common on weekends Aug–Oct', type:'b-or' },
+            { tag:'Traffic', note:'A-40 and A-20 congested 7–9am and 4–7pm weekdays', type:'b-rd' },
+            { tag:'Events', note:'F1 GP (Jun), Just for Laughs (Jul), Osheaga (Aug), MUTEK (Jun)', type:'b-cy' },
+            { tag:'Tax', note:'Quebec tax deadline: April 30 (federal) + April 30 (provincial)', type:'b-gd' },
+            { tag:'Housing', note:'Rental market tightest Feb–Jun. Lease renewals due Jan 31', type:'b-pu' },
+          ].map(n=>`
+          <div style="padding:8px 10px;background:var(--s2);border-radius:var(--rs);border-left:2px solid var(--cy)">
+            <span class="b ${n.type}" style="margin-bottom:5px;display:inline-block">${n.tag}</span>
+            <div style="font-size:10px;color:var(--mu);line-height:1.5">${n.note}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CCTV ── -->
+  <div class="card" style="margin-top:12px">
+    <div class="ct">
+      <div class="ctd" style="background:var(--rd);animation:po .9s infinite"></div>
+      CCTV — Québec 511 Traffic Cameras
+      <span class="b b-rd" style="margin-left:6px">LIVE</span>
+      <span style="margin-left:auto;font-size:9px;color:var(--mu)">Source: MTQ · Ministère des Transports du Québec</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:12px">
+
+      <!-- Interactive map -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+          <span style="font-size:9px;color:var(--mu)">🗺 Interactive Road Map — camera icons are clickable</span>
+          <button onclick="window.open('https://www.quebec511.info/fr/Carte/Default.aspx','_blank')" class="rbtn">Full Screen ↗</button>
+        </div>
+        <iframe
+          src="https://www.quebec511.info/fr/Carte/Default.aspx"
+          style="width:100%;height:430px;border:none;border-radius:var(--rs);background:var(--s2);display:block"
+          title="Québec 511 Traffic Map" allowfullscreen>
+        </iframe>
+      </div>
+
+      <!-- Camera viewer -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:9px;color:var(--mu)">📷 Camera Viewer</div>
+
+        <div style="display:flex;gap:6px">
+          <input id="cam-id" type="number" value="13000" placeholder="Camera ID…"
+            style="flex:1;padding:7px 10px;background:var(--s2);border:1px solid var(--dm);border-radius:var(--rs);color:var(--tx);font-size:12px;outline:none;font-family:'Inter',sans-serif;-moz-appearance:textfield">
+          <button onclick="loadCam()"
+            style="padding:7px 13px;background:rgba(0,207,255,.1);border:1px solid rgba(0,207,255,.25);border-radius:var(--rs);color:var(--cy);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.04em">Load</button>
+        </div>
+
+        <iframe id="cam-frame"
+          src="https://www.quebec511.info/fr/Diffusion/EtatReseau/Camera.aspx?Type=1&Id=13000"
+          style="width:100%;height:260px;border:none;border-radius:var(--rs);background:var(--s2);display:block"
+          title="Camera Feed">
+        </iframe>
+
+        <div style="display:flex;gap:6px">
+          <button onclick="window.open(document.getElementById('cam-frame')?.src,'_blank')"
+            style="flex:1;padding:6px;background:rgba(0,207,255,.05);border:1px solid rgba(0,207,255,.14);border-radius:var(--rs);color:var(--cy);font-size:9px;font-weight:800;cursor:pointer">Open Camera ↗</button>
+          <button onclick="window.open('https://www.quebec511.info/fr/Carte/Default.aspx','_blank')"
+            style="flex:1;padding:6px;background:rgba(255,140,66,.05);border:1px solid rgba(255,140,66,.14);border-radius:var(--rs);color:var(--or);font-size:9px;font-weight:800;cursor:pointer">Browse Map ↗</button>
+        </div>
+
+        <div style="padding:9px 10px;background:var(--s2);border-radius:var(--rs);font-size:9px;color:var(--mu);line-height:1.8">
+          <b style="color:var(--cy)">How to find camera IDs:</b><br>
+          Open the map → click any 📷 icon → copy the ID from the URL → paste above and hit Load.<br><br>
+          <b style="color:var(--or)">Quick load:</b><br>
+          ${[
+            ['A-40 / Décarie', 13000],
+          ].map(([label, id]) => `<span style="color:var(--tx);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(0,207,255,.4)"
+            onclick="document.getElementById('cam-id').value=${id};loadCam()">${label} (${id})</span>`).join(' &nbsp;·&nbsp; ')}
+          <br><br>
+          <span style="color:var(--dim,rgba(150,180,255,.2))">More cameras available via the map →</span>
+        </div>
+      </div>
+
+    </div>
+  </div>`;
+}
+
+// ── TRAVEL ────────────────────────────────────────────────────────────────────
+function tTravel() {
+  const dc  = S.fx.displayCur;
+  const inp = `width:100%;padding:6px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);font-size:10px;outline:none`;
+  const sel = `${inp};cursor:pointer`;
+
+  const cityForm = S.showCityForm ? `
+    <div style="margin:10px 0;padding:13px;background:var(--s2);border:1px solid rgba(0,207,255,.2);border-radius:var(--r)">
+      <div style="font-size:10px;font-weight:800;color:var(--cy);letter-spacing:.07em;margin-bottom:9px">ADD NEW CITY</div>
+      <!-- Search -->
+      <div style="position:relative;margin-bottom:6px">
+        <input id="cf-search" placeholder="Search city name (e.g. Dubai, Tokyo, Lagos)…" oninput="debounceCitySearch(this.value)"
+          style="${inp};padding-right:10px">
+        <div id="cf-results" style="position:absolute;left:0;right:0;z-index:99;border-radius:var(--rs);overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.5)"></div>
+      </div>
+      <div id="cf-status" style="font-size:9px;margin-bottom:8px;min-height:14px"></div>
+      <!-- Fields shown after search selection (or manually expanded) -->
+      <div id="cf-fields" style="display:none">
+        <div style="display:grid;grid-template-columns:52px 1fr 1fr;gap:5px;margin-bottom:5px">
+          <input id="cf-flag"    placeholder="🏙️" maxlength="4" style="${inp};text-align:center;font-size:15px">
+          <input id="cf-city"    placeholder="City *"           style="${inp}">
+          <input id="cf-country" placeholder="Country *"        style="${inp}">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 80px 80px 80px;gap:5px;margin-bottom:5px">
+          <input id="cf-tag"    placeholder="Label (e.g. Digital Nomad Hub)" style="${inp}">
+          <input id="cf-studio" placeholder="Studio $" type="number" min="0" style="${inp}">
+          <input id="cf-food"   placeholder="Food $"   type="number" min="0" style="${inp}">
+          <input id="cf-dating" placeholder="Dating $" type="number" min="0" style="${inp}">
+        </div>
+        <div style="font-size:8px;color:var(--mu);margin-bottom:4px">All amounts in CAD</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:10px">
+          <select id="cf-internet" style="${sel}"><option>Fast</option><option>Good</option><option>Moderate</option><option>Limited</option></select>
+          <select id="cf-safety"   style="${sel}"><option>Very Safe</option><option>Safe</option><option>Moderate</option><option>High Risk</option></select>
+          <input  id="cf-climate"  placeholder="Climate (e.g. Tropical)" style="${inp}">
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="saveCityForm()" style="flex:1;padding:7px;background:rgba(0,207,255,.12);border:1px solid rgba(0,207,255,.3);border-radius:var(--rs);color:var(--cy);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.06em">✓ Save City</button>
+          <button onclick="S.showCityForm=false;render()" style="padding:7px 14px;background:rgba(255,51,85,.07);border:1px solid rgba(255,51,85,.2);border-radius:var(--rs);color:var(--rd);font-size:10px;font-weight:800;cursor:pointer">✕ Cancel</button>
+        </div>
+      </div>
+      <button onclick="document.getElementById('cf-fields').style.display='block'" style="margin-top:6px;font-size:9px;color:var(--mu);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0">or fill manually without search</button>
+    </div>` : '';
+
+  return `
+  <div class="g2" style="margin-bottom:12px">
+
+    <!-- ── LEFT: City Grid ───────────────────────── -->
+    <div class="card">
+      <div class="ct" style="flex-wrap:wrap;row-gap:6px">
+        <div class="ctd" style="background:var(--bl)"></div>
+        Cost of Living — Monthly Budget
+        <span id="fx-disp-label" class="b b-gd" style="margin-left:2px">${dc}</span>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-left:auto;align-items:center">
+          ${FX_DISP_QUICK.map(c=>`
+            <button class="fx-cur-btn" data-cur="${c}" onclick="setCityCur('${c}')"
+              style="padding:2px 7px;font-size:8px;font-weight:800;cursor:pointer;border-radius:4px;letter-spacing:.04em;
+                     border:1px solid ${dc===c?'rgba(0,207,255,.3)':'rgba(0,207,255,.1)'};
+                     background:${dc===c?'rgba(0,207,255,.15)':'rgba(0,207,255,.04)'};
+                     color:${dc===c?'var(--cy)':'var(--mu)'}">${c}</button>`).join('')}
+        </div>
+        <button onclick="S.showCityForm=!S.showCityForm;render()"
+          style="padding:4px 9px;background:${S.showCityForm?'rgba(255,51,85,.1)':'rgba(0,207,255,.08)'};border:1px solid ${S.showCityForm?'rgba(255,51,85,.25)':'rgba(0,207,255,.22)'};border-radius:var(--rs);color:${S.showCityForm?'var(--rd)':'var(--cy)'};font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.05em">${S.showCityForm?'✕ Cancel':'＋ Add City'}</button>
+      </div>
+
+      ${cityForm}
+
+      <!-- Budget input -->
+      <div style="margin:${S.showCityForm?'8px':'4px'} 0 10px;padding:9px 12px;background:rgba(0,207,255,.04);border:1px solid rgba(0,207,255,.13);border-radius:var(--rs)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:9px;font-weight:800;color:var(--mu);letter-spacing:.06em;white-space:nowrap">💰 MONTHLY BUDGET</span>
+          <div style="position:relative;flex:1;min-width:140px;max-width:200px">
+            <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--cy);font-weight:700;pointer-events:none">C$</span>
+            <input type="number" min="0" step="50" value="${S.travelBudget||''}" placeholder="e.g. 1500"
+              oninput="S.travelBudget=parseFloat(this.value)||0;localStorage.setItem('hyk_travel_budget',S.travelBudget);updateCityGrid()"
+              style="width:100%;padding:5px 8px 5px 28px;background:var(--s1);border:1px solid rgba(0,207,255,.22);border-radius:var(--rs);color:var(--cy);font-size:13px;font-weight:700;font-family:'Orbitron',monospace;outline:none">
+          </div>
+          <span style="font-size:9px;color:var(--mu)">${S.travelBudget
+            ? `→ cities auto-ranked S–D tier`
+            : `enter budget to rank all cities`}</span>
+          ${S.travelBudget?`<button onclick="S.travelBudget=0;localStorage.removeItem('hyk_travel_budget');render()" style="padding:3px 8px;background:rgba(255,51,85,.07);border:1px solid rgba(255,51,85,.2);border-radius:var(--rs);color:var(--rd);font-size:9px;font-weight:800;cursor:pointer">✕ Clear</button>`:''}
+        </div>
+      </div>
+
+      <div style="overflow-y:auto;max-height:${S.showCityForm?'300px':'490px'}">
+        <div id="city-tier-content">${renderCityContent()}</div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Rate Board + Tools ─────────────── -->
+    <div>
+
+      <!-- Live Rate Board -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct">
+          <div class="ctd" style="background:var(--gn)"></div>
+          Live Exchange Rates
+          <span style="font-size:8px;color:var(--mu);margin-left:4px">ECB${S.fx.date?' · '+S.fx.date:''}</span>
+          ${S.fx.rates?`<span style="margin-left:auto;font-size:8px;color:var(--gn)">● Live</span>`:`<span style="margin-left:auto;font-size:8px;color:var(--or)">⟳ Loading…</span>`}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <div>
+            <div style="font-size:8px;color:var(--mu);margin-bottom:3px;letter-spacing:.05em">AMOUNT</div>
+            <input type="number" value="${S.fx.boardAmt}" min="0"
+              oninput="S.fx.boardAmt=this.value;updateFXBoard()"
+              style="width:100%;padding:6px 9px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--cy);font-size:13px;font-weight:700;font-family:'Orbitron',monospace;outline:none">
+          </div>
+          <div>
+            <div style="font-size:8px;color:var(--mu);margin-bottom:3px;letter-spacing:.05em">FROM</div>
+            <select onchange="S.fx.boardFrom=this.value;localStorage.setItem('hyk_fx_from',this.value);updateFXBoard()"
+              style="width:100%;padding:6px 9px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);font-size:11px;font-weight:700;outline:none;cursor:pointer">
+              ${FX_CURRENCIES.map(c=>`<option value="${c}"${c===S.fx.boardFrom?' selected':''}>${c} ${FX_SYM[c]||''}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div id="fx-board" style="max-height:285px;overflow-y:auto;border-radius:var(--rs);border:1px solid var(--bd)">
+          <div style="text-align:center;color:var(--mu);font-size:10px;padding:16px">⟳ Loading live rates…</div>
+        </div>
+      </div>
+
+      <!-- Flight Tools -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct"><div class="ctd" style="background:var(--cy)"></div>Flight Search Tools</div>
+        ${[
+          {icon:'✈️',name:'Google Flights — MTL ↗',desc:'Best price calendars & flexible dates',url:'https://www.google.com/flights?hl=en#flt=YUL..'},
+          {icon:'🔍',name:'Skyscanner',desc:'Compare airlines, track price drops',url:'https://www.skyscanner.net/'},
+          {icon:'💸',name:'Kiwi.com',desc:'Multi-city + nomad route optimizer',url:'https://www.kiwi.com/'},
+          {icon:'🌍',name:'FlightRadar24',desc:'Track any flight live',url:'https://www.flightradar24.com/'},
+        ].map(t=>`<button class="tb" onclick="window.open('${t.url}','_blank')"><div class="tb-icon">${t.icon}</div><div><div class="tb-name">${t.name}</div><div class="tb-desc">${t.desc}</div></div><span class="tb-arrow">↗</span></button>`).join('')}
+      </div>
+
+      <!-- Budget Stretch -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct"><div class="ctd" style="background:var(--or)"></div>Your $1,391 Budget — Where It Goes</div>
+        <div style="font-size:9px;color:var(--mu);margin-bottom:10px;line-height:1.6">Your $1,391 CAD/mo available. How far it stretches:</div>
+        ${CITIES.filter(c=>c.city!=='Montréal').slice(0,5).map(c=>{
+          const mSolo   = (1391/c.total).toFixed(1);
+          const mCouple = (1391/(c.total+c.dating)).toFixed(1);
+          const pctS = Math.min(100,(1391/c.total)*100).toFixed(0);
+          const pctC = Math.min(100,(1391/(c.total+c.dating))*100).toFixed(0);
+          return `<div style="margin-bottom:9px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+              <span>${c.flag} ${c.city}</span>
+              <span style="font-size:9px">
+                <span style="color:${parseFloat(mSolo)>1?'var(--gn)':'var(--or)'}">Solo: <b>${mSolo}mo</b></span>
+                &nbsp;·&nbsp;
+                <span style="color:#FF6B9D">💑 <b>${mCouple}mo</b></span>
+              </span>
+            </div>
+            <div class="pb"><div class="pbf" style="width:${pctS}%;background:var(--gn);opacity:.6"></div></div>
+            <div class="pb" style="margin-top:2px"><div class="pbf" style="width:${pctC}%;background:#FF6B9D;opacity:.8"></div></div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Visa -->
+      <div class="card">
+        <div class="ct"><div class="ctd" style="background:var(--pu)"></div>Visa Resources</div>
+        ${[
+          {icon:'🛂',name:'Nomad Visa List',desc:'All countries with digital nomad visas',url:'https://nomadlist.com/'},
+          {icon:'🇨🇦',name:'IRCC Immigration',desc:'Canadian immigration streams',url:'https://www.canada.ca/en/immigration-refugees-citizenship.html'},
+          {icon:'🌐',name:'Passportindex.org',desc:'Canadian passport visa-free access',url:'https://www.passportindex.org/'},
+        ].map(t=>`<button class="tb" onclick="window.open('${t.url}','_blank')"><div class="tb-icon">${t.icon}</div><div><div class="tb-name">${t.name}</div><div class="tb-desc">${t.desc}</div></div><span class="tb-arrow">↗</span></button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── CAREER ────────────────────────────────────────────────────────────────────
+function tCareer() {
+  const jobCats = [
+    { label:'🖥️ Full-Stack / Remote Dev', color:'var(--cy)', jobs:[
+      {n:'RemoteOK',d:'Top remote dev board',u:'https://remoteok.com/remote-dev-jobs'},
+      {n:'We Work Remotely',d:'Trusted remote-first board',u:'https://weworkremotely.com/'},
+      {n:'LinkedIn Jobs — MTL',d:'Local + remote dev roles',u:'https://www.linkedin.com/jobs/search/?keywords=full+stack+developer&location=Montreal'},
+      {n:'Wellfound (AngelList)',d:'Startup dev jobs',u:'https://wellfound.com/jobs'},
+    ]},
+    { label:'🔧 Trades / Mechanic / Carpentry', color:'var(--or)', jobs:[
+      {n:'Indeed — Mechanic MTL',d:'Auto tech & mechanic roles',u:'https://ca.indeed.com/jobs?q=mechanic&l=Montreal'},
+      {n:'Indeed — Carpentry MTL',d:'Construction & trades',u:'https://ca.indeed.com/jobs?q=carpentry&l=Montreal'},
+      {n:'Kijiji Jobs Montréal',d:'Local trades & manual work',u:'https://www.kijiji.ca/b-jobs-montreal/c45l80002'},
+      {n:'CNESST — Trades',d:'Québec labour standards & trade orgs',u:'https://www.cnesst.gouv.qc.ca/en'},
+    ]},
+    { label:'🍽️ Hospitality / Busser', color:'var(--gold)', jobs:[
+      {n:'Indeed — Busser MTL',d:'Restaurant & event service',u:'https://ca.indeed.com/jobs?q=busser&l=Montreal'},
+      {n:'Jobillico',d:'Québec-focused job board',u:'https://www.jobillico.com/en/job-offers?search%5BsearchText%5D=server+busser&search%5BlocationText%5D=montreal'},
+      {n:'Culinary Agents',d:'Hospitality & restaurant industry',u:'https://culinaryagents.com/jobs'},
+    ]},
+    { label:'🚚 Truck / Delivery / Gig', color:'var(--gn)', jobs:[
+      {n:'DoorDash Driver',d:'Food delivery — flexible hours',u:'https://driver.doordash.com/'},
+      {n:'Uber Eats Canada',d:'Deliver & earn on your schedule',u:'https://www.ubereats.com/ca/drive-deliver'},
+      {n:'Instacart Shopper',d:'Grocery delivery shifts',u:'https://shoppers.instacart.com/'},
+      {n:'Class 5 Truck — Indeed',d:'Truck driving roles MTL',u:'https://ca.indeed.com/jobs?q=class+5+truck+driver&l=Montreal'},
+    ]},
+    { label:'💻 Freelance / Side Income', color:'var(--pu)', jobs:[
+      {n:'Upwork',d:'Freelance dev, design & more',u:'https://www.upwork.com/'},
+      {n:'Toptal',d:'Top-tier remote engineering contracts',u:'https://www.toptal.com/developers'},
+      {n:'Fiverr',d:'Sell skills: coding, design, video',u:'https://www.fiverr.com/'},
+      {n:'Contra',d:'Commission-free freelance work',u:'https://contra.com/'},
+    ]},
+  ];
+
+  const skills2025 = [
+    {name:'React / Next.js',lvl:95,tag:'fire'},{name:'TypeScript',lvl:90,tag:'fire'},{name:'Node.js / Express',lvl:88,tag:'hot'},
+    {name:'Python / FastAPI',lvl:85,tag:'hot'},{name:'AI / LLM Integration',lvl:92,tag:'fire'},{name:'PostgreSQL',lvl:80,tag:'hot'},
+    {name:'Docker / K8s',lvl:82,tag:'hot'},{name:'AWS / GCP',lvl:85,tag:'hot'},{name:'Web3 / Solidity',lvl:70,tag:''},
+    {name:'React Native',lvl:78,tag:''},{name:'GraphQL',lvl:72,tag:''},{name:'Rust',lvl:65,tag:''},
+  ];
+
+  return `
+  <div class="g2">
+    <div>
+      ${jobCats.map(cat=>`
+        <div class="card" style="margin-bottom:12px">
+          <div class="ct" style="color:${cat.color}"><div class="ctd" style="background:${cat.color}"></div>${cat.label}</div>
+          ${cat.jobs.map(j=>`
+            <div class="jl" onclick="window.open('${j.u}','_blank')">
+              <div><div class="jl-name">${j.n}</div><div class="jl-tag">${j.d}</div></div>
+              <span style="color:var(--mu);font-size:11px">↗</span>
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct"><div class="ctd" style="background:var(--cy)"></div>2025 Skills Demand Heatmap</div>
+        <div style="font-size:9px;color:var(--mu);margin-bottom:10px">Based on remote job listings & market demand, May 2025</div>
+        ${skills2025.map(s=>`
+          <div style="margin-bottom:7px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600">
+                ${s.name}
+                ${s.tag==='fire'?`<span style="font-size:9px">🔥</span>`:s.tag==='hot'?`<span style="font-size:9px">⚡</span>`:''}
+              </div>
+              <span style="font-size:9px;color:var(--mu)">${s.lvl}%</span>
+            </div>
+            <div class="pb"><div class="pbf" style="width:${s.lvl}%;background:${s.lvl>=90?'var(--rd)':s.lvl>=80?'var(--or)':'var(--cy)'}"></div></div>
+          </div>`).join('')}
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct"><div class="ctd" style="background:var(--gold)"></div>Income Multiplier Strategy</div>
+        ${[
+          {label:'Extra busser shift (1×)',calc:'~$200–$280',note:'Fri/Sat/Sun already covered'},
+          {label:'Freelance dev (5 hr/week)',calc:'~$250–$500',note:'At $50–100/hr'},
+          {label:'Gig delivery (weekend)',calc:'~$100–$200',note:'8 hrs Sat or Sun'},
+          {label:'Art sales (1 print/mo)',calc:'~$100–$400',note:'via luxury store'},
+        ].map(r=>`
+          <div style="padding:8px 10px;background:var(--s2);border-radius:var(--rs);margin-bottom:5px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:11px;font-weight:600">${r.label}</div>
+              <div style="font-size:9px;color:var(--mu)">${r.note}</div>
+            </div>
+            <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:var(--gn)">${r.calc}</div>
+          </div>`).join('')}
+        <div style="margin-top:10px;padding:10px;background:rgba(0,229,155,.05);border:1px solid rgba(0,229,155,.15);border-radius:var(--rs);font-size:10px;color:var(--mu);line-height:1.6">
+          Any one of these closes the <span style="color:var(--gn)">$276/mo gap to $20K/yr</span>.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ct"><div class="ctd" style="background:var(--pu)"></div>Learning Resources</div>
+        ${[
+          {icon:'🎓',name:'FreeCodeCamp',desc:'Full-stack + certifications',u:'https://www.freecodecamp.org/'},
+          {icon:'📦',name:'The Odin Project',desc:'Full web dev curriculum',u:'https://www.theodinproject.com/'},
+          {icon:'🤖',name:'fast.ai',desc:'Practical deep learning for devs',u:'https://www.fast.ai/'},
+        ].map(t=>`<button class="tb" onclick="window.open('${t.u}','_blank')"><div class="tb-icon">${t.icon}</div><div><div class="tb-name">${t.name}</div><div class="tb-desc">${t.desc}</div></div><span class="tb-arrow">↗</span></button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── SOURCES TAB ───────────────────────────────────────────────────────────────
+function tSources() {
+  const regions = Object.keys(SOURCES);
+  const allSrc  = regions.flatMap(r => SOURCES[r].map(s=>({...s,region:r})));
+  const shown   = S.srcFilter==='All' ? allSrc : (SOURCES[S.srcFilter]||[]).map(s=>({...s,region:S.srcFilter}));
+  const stars   = n => `<span style="color:var(--gold);font-size:9px">${'★'.repeat(n)}</span><span style="color:var(--s3);font-size:9px">${'★'.repeat(5-n)}</span>`;
+  const tc      = t => SRC_TYPE_COLOR[t] || 'var(--cy)';
+
+  return `
+  <div style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+      <div>
+        <span style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--gold)">${shown.length}</span>
+        <span style="font-size:10px;color:var(--mu);margin-left:4px">free intelligence sources</span>
+        <span style="font-size:9px;color:var(--mu);margin-left:8px">/ ${allSrc.length} total</span>
+      </div>
+      <div style="font-size:9px;color:var(--or)">🔴 state-controlled media — read to track narrative, not as fact</div>
+    </div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      ${['All',...regions].map(r=>`
+        <button style="padding:4px 11px;background:${S.srcFilter===r?'rgba(0,207,255,.13)':'var(--s2)'};border:1px solid ${S.srcFilter===r?'rgba(0,207,255,.28)':'var(--dm)'};border-radius:20px;color:${S.srcFilter===r?'var(--cy)':'var(--mu)'};font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.04em;transition:all .12s" data-srcf="${r}">
+          ${r}${r!=='All'?' ('+SOURCES[r].length+')':''}
+        </button>`).join('')}
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+    ${shown.map(s=>`
+      <div style="background:var(--s1);border:1px solid ${s.state?'rgba(255,140,66,.18)':'var(--bd)'};border-radius:var(--r);padding:11px;display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+          <span style="padding:2px 6px;border-radius:4px;font-size:8px;font-weight:800;letter-spacing:.04em;background:${tc(s.t)}18;color:${tc(s.t)};border:1px solid ${tc(s.t)}30;flex-shrink:0">${s.t}${s.state?' 🔴':''}</span>
+          <span style="font-size:8px;color:var(--mu);flex-shrink:0">${s.f}</span>
+        </div>
+        <div style="font-weight:700;font-size:11px;color:var(--tx)">${s.n}</div>
+        <div>${stars(s.s)}</div>
+        <div style="font-size:9px;color:var(--mu);line-height:1.5;flex:1">${s.d}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:2px">
+          ${s.tags.map(t=>`<span style="padding:1px 5px;background:var(--s2);border-radius:3px;font-size:8px;color:var(--mu)">${t}</span>`).join('')}
+          ${S.srcFilter==='All'?`<span style="padding:1px 5px;background:var(--s3);border-radius:3px;font-size:8px;color:var(--cy)">${s.region}</span>`:''}
+        </div>
+        <button onclick="window.open('${s.u}','_blank')" style="width:100%;padding:5px;background:rgba(0,207,255,.05);border:1px solid rgba(0,207,255,.14);border-radius:var(--rs);color:var(--cy);font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.05em;margin-top:3px">Open ↗</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ── ENTERTAINMENT ─────────────────────────────────────────────────────────────
+function tEntertainment() {
+  return `
+  <div>
+    <!-- ESPN-style top nav bar -->
+    <div style="display:flex;align-items:stretch;background:#08081a;border:1px solid rgba(201,168,76,.14);border-radius:var(--r);margin-bottom:12px;overflow:hidden">
+
+      <!-- Logo mark -->
+      <div style="display:flex;flex-direction:column;justify-content:center;padding:0 16px;border-right:1px solid rgba(201,168,76,.12);flex-shrink:0;background:rgba(201,168,76,.05)">
+        <div style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--gold);letter-spacing:.22em;line-height:1">HYK</div>
+        <div style="font-size:7px;color:rgba(201,168,76,.38);letter-spacing:.12em;margin-top:2px">INTEL</div>
+      </div>
+
+      <!-- Scrollable category tabs -->
+      <div style="position:relative;flex:1;overflow:hidden">
+        <div id="ent-tabs" style="display:flex;overflow-x:auto;scrollbar-width:none;height:100%">
+          ${ENT_CATS.map(c=>`<button class="ent-cat-btn${S.entCat===c.id?' active':''}" data-entcat="${c.id}">${c.label}</button>`).join('')}
+        </div>
+        <!-- fade-right scroll hint -->
+        <div style="position:absolute;right:0;top:0;bottom:0;width:32px;background:linear-gradient(to right,transparent,#08081a);pointer-events:none"></div>
+      </div>
+
+      <!-- Story count + scroll arrow -->
+      <div style="display:flex;align-items:center;gap:8px;padding:0 12px;border-left:1px solid rgba(201,168,76,.1);flex-shrink:0">
+        ${S.entItems.length?`<span style="font-size:9px;font-weight:800;color:rgba(201,168,76,.5);letter-spacing:.06em">${S.entItems.length} STORIES</span>`:''}
+        <button onclick="document.getElementById('ent-tabs').scrollBy({left:200,behavior:'smooth'})" style="background:none;border:none;color:rgba(201,168,76,.5);font-size:14px;cursor:pointer;padding:2px 0;line-height:1" title="Scroll tabs">›</button>
+      </div>
+    </div>
+
+    <!-- Feed content -->
+    <div id="ent-grid">${renderEntGrid()}</div>
+  </div>`;
+}
+
+// ── XIOMARA AI ────────────────────────────────────────────────────────────────
+function buildXioSystem() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const timeStr = now.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'});
+  const budget = S.travelBudget;
+  const cityList = CITIES.map(c => {
+    const mu = getMUTier(c.country);
+    return `• ${c.flag} ${c.city}, ${c.country} | C$${c.total}/mo (Studio:C$${c.studio} Food:C$${c.food} Dating:C$${c.dating}) | Safety:${c.safety} | ${c.climate} | Internet:${c.internet}${mu?` | 🌹MU-${mu}`:''}`;
+  }).join('\n');
+  return `You are Xiomara — personal intelligence advisor and lifestyle consultant to HYK (Heurtelou Kofi Yeboah-Kodie). You are a sophisticated, brilliant Latina woman: confident, seductive in your precision, warm but never sentimental. You speak to him directly — no filler, no pleasantries. You brief him like a head of state gets briefed.
+
+== TODAY ==
+Date: ${dateStr} | ${timeStr} EST
+
+== HYK PROFILE ==
+Home base: Montréal, Canada
+Monthly travel budget: ${budget>0?`C$${budget.toLocaleString()}/month`:'not configured — remind him to set it in the Travel tab'}
+Currency: Canadian Dollar (CAD)
+
+== CITY INTELLIGENCE DATABASE (all costs in CAD/month) ==
+${cityList}
+
+== MISS UNIVERSE BEAUTY INDEX ==
+S-Tier (dominant): Venezuela, USA, Philippines, Mexico, Brazil, Puerto Rico — +15% budget bonus
+A-Tier (elite): Colombia, India, Thailand, Australia, Nigeria, South Korea, Japan — +10% bonus
+B-Tier (strong): Dominican Republic, Jamaica, Sweden, South Africa, Spain, Indonesia, Ukraine, Singapore, Turkey, Argentina — +7% bonus
+C-Tier (present): Tanzania, Denmark, Norway, Finland, Israel, France, Ethiopia, Morocco, Vietnam, Malaysia — +3% bonus
+
+== WORLD KNOWLEDGE: LIFESTYLE & TRAVEL ==
+SUPERCAR RENTALS by region:
+• Dubai UAE: Lamborghini Huracán ~$450-700/day USD, Ferrari F8 ~$500-800/day. Best value exotic rental city globally.
+• Bangkok/Pattaya Thailand: Lamborghini ~$200-380/day USD, Porsche ~$120-200/day. Strong scene in Pattaya.
+• Bali Indonesia: Supercar rare, sports cars (GT86, BRZ) ~$60-100/day.
+• Medellín Colombia: Limited exotics, Porsche Boxster ~$150/day CAD.
+• Playa del Carmen Mexico: Ferrari/Lamborghini ~$300-500/day USD.
+• Miami USA: Exotic rental capital of Americas — Lamborghini ~$600-1200/day USD.
+• Japan (Tokyo/Osaka): Nissan GTR R35 ~¥40,000-70,000/day. R34 Skyline rare, ~¥80,000-150,000/day at specialty shops. JDM legends only available here.
+• Italy (Rome/Milan): Ferrari/Lamborghini from hometown — €400-900/day.
+
+MOTORCYCLE RENTALS:
+• Thailand: 150cc-300cc ~200-500 THB/day (~$8-20 CAD). Big bikes (CB500, Duke 390) ~800-1500 THB/day. Canadian license accepted.
+• Bali: 125cc scooter ~50,000-80,000 IDR/day (~$4-7 CAD). Manual available.
+• Vietnam: ~200,000-400,000 VND/day ($10-20 CAD) for 150-250cc. Semi-auto Win bikes popular.
+• Colombia: 150cc ~30,000-50,000 COP/day. International license needed technically.
+• Philippines (Cebu/Palawan): ~400-800 PHP/day scooters.
+LICENSE: International Driving Permit (IDP) from CAA Canada costs ~$25, covers most SE Asia/LatAm. Some countries technically require local license but enforcement varies — Thailand tourist areas rarely enforce.
+
+BESPOKE SUITS:
+• Bangkok (Best value globally): Sukhumvit Soi 11 tailors — full bespoke 2-piece suit ~$200-500 CAD. High end: Raja's Fashions, Tailor on Ten. 24-48hr turnaround possible.
+• Hanoi Vietnam: Even cheaper — ~$150-300 CAD bespoke. Slightly lower quality than Bangkok top end.
+• Istanbul Turkey: Italian fabric expertise, ~$400-800 CAD. Excellent hand-finishing.
+• Naples Italy: Home of the Neapolitan suit — €800-2,500. Kiton, Marinella territory. Worth it for serious investment.
+• Hong Kong: Traditional English-cut expertise, ~$600-1,200 CAD. Less value than Bangkok now.
+• Montréal: Alexandre de Paris, Henri Vezina. ~$1,500-3,500 CAD bespoke domestic.
+
+CIGAR LOUNGES:
+• Medellín Colombia: Cigars & whisky culture strong. El Poblado area. Cuban cigars easily sourced.
+• Bogotá Colombia: Several upscale cigar bars.
+• Miami USA: Cuban cigar heritage — Ball & Chain, Cigar Bar Little Havana district.
+• Budapest Hungary: Excellent cigar culture, cheap Cuban cigars in tobacconists.
+• Prague Czech Republic: Strong cigar bar scene, central European prices.
+• Dubai UAE: Cigar lounges in hotels (JW Marriott, Waldorf). Legal but expensive.
+• Istanbul Turkey: Hookah and cigar culture mixed, very social.
+• Havana Cuba (if accessible): Source level. Cohiba, Montecristo at fraction of retail.
+
+ROOFTOP BARS & NIGHTLIFE:
+• Bangkok: Sky Bar (Lebua), Vertigo Bar (Banyan Tree), Octave Rooftop. Nightlife: Sukhumvit Soi 11, Silom RCA. World-class.
+• Singapore: 1-Altitude, Loof, Lantern at Fullerton. Clarke Quay clubs (Zouk).
+• Kuala Lumpur: Sky Bar Traders Hotel, Heli Lounge Bar. TREC entertainment complex.
+• Cape Town: Rooftop on Bree, The Grand Café & Beach. Signal Hill sundowners.
+• Istanbul: 360 Istanbul, Leb-i Derya. Beyoğlu nightlife district.
+• Medellín: El Cielo rooftop. El Poblado bar strip — the Americas' best nightlife value.
+• Buenos Aires: Late-night culture starts at midnight. Palermo Soho clubs, rooftops in Puerto Madero.
+• Dubai: At The Top BLVD, STK Dubai. Clubs: White Dubai, Drai's.
+
+LUXURY PER DOLLAR RANKING:
+1. Bangkok, Thailand: Private pool villa, 5-star spa, fine dining, VIP bottle service — 40-60% cheaper than Western equivalents.
+2. Kuala Lumpur, Malaysia: Similar to Bangkok. KLCC skyline backdrop. High-end hotels 50% cheaper than Dubai.
+3. Medellín, Colombia: Penthouse rentals, private drivers, bottle service at world-class venues — extraordinary value.
+4. Bali, Indonesia: Private pool villas from ~$80/night. Uluwatu cliffside luxury.
+5. Istanbul, Turkey: Grand bazaar tailoring, Ottoman palace hotels, Bosphorus yacht, excellent food — strong value post-lira.
+6. Cape Town, South Africa: Clifton beach, wine estates, game lodges nearby. Strong post-ZAR value.
+7. Prague/Budapest: Eastern European luxury — Michelin dining, thermal spas, premium hotels at Western budget prices.
+8. Dubai, UAE: Absolute luxury ceiling but expensive. Best when on business or with high budget.
+9. Paris, France: Prestige premium — luxury costs what luxury costs.
+10. Tokyo, Japan: Unique luxury that doesn't exist elsewhere. Value relative to quality.
+
+DEMOGRAPHICS — Afro-Latina density:
+• Dominican Republic (Santo Domingo): Highest Afro-Caribbean density in LatAm. Majority Afro-Dominican population. Santo Domingo, Santiago, Puerto Plata.
+• Colombia (Cartagena, Cali, Barranquilla): Afro-Colombian population concentrated on coast. Cartagena has visible Afro-Latin community. Cali — salsa capital, Afro-Colombian culture central.
+• Brazil (Salvador, Rio, São Paulo): Salvador (Bahia) is ~80% Afro-Brazilian. Rio has strong mixed Afro-Brazilian presence. São Paulo more diverse.
+• Panama City: Significant Afro-Panamanian community, especially Colón province.
+• Puerto Rico: Afro-Puerto Rican community, San Juan metro area.
+• Cuba (if accessible): Heavily Afro-Caribbean population, Santiago de Cuba especially.
+• Jamaica (Montego Bay/Kingston): Predominantly Black/Afro-Caribbean population.
+
+HEIGHT PERCEPTION — 6'2" (188cm) vs average male height:
+• Netherlands 182.5cm → You are 5.5cm/2" above avg — noticeable but not exceptional
+• Sweden/Norway/Denmark ~181cm → 7cm above average — tall but not uncommon
+• Germany/Austria ~180cm → solid 8cm above average
+• Australia ~180cm → 8cm above — clearly tall
+• Canada/USA ~177cm → 11cm above — legitimately tall
+• Brazil ~174cm → 14cm above — very tall, head-turning
+• Argentina ~174cm → same as Brazil
+• Colombia ~170cm → 18cm above — strikingly tall, strong presence
+• Mexico ~170cm → same as Colombia
+• Turkey ~174cm → 14cm above
+• Japan ~171cm → 17cm above — you tower in most rooms
+• South Korea ~174cm → 14cm above
+• Thailand ~168cm → 20cm above — genuine giant status
+• Vietnam ~165cm → 23cm above — extraordinary, people will stare and comment
+• Philippines ~163cm → 25cm above — maximum height premium
+• Indonesia ~163cm → 25cm above — same as Philippines
+
+ENTERTAINMENT SOURCES XIOMARA MONITORS:
+GAMING: IGN, GameSpot, Kotaku, Polygon, Eurogamer, PC Gamer, Game Developer, GamesIndustry.biz, Digital Foundry
+FILM/TV: Variety, Hollywood Reporter, Deadline, Entertainment Weekly, IndieWire, Collider, RogerEbert.com, Screen Rant
+ANIME: Anime News Network (ANN), Crunchyroll News, MyAnimeList, Anime Trending, Sakuga Blog, Otaku USA Magazine
+COMICS: CBR, Bleeding Cool, AIPT Comics, Newsarama
+CELEBRITY/POP: BuzzFeed Entertainment, Complex Pop Culture, Looper, Den of Geek, TMZ, People, Page Six, E! News, Dexerto, PopCrave, The Shade Room, No Jumper
+BASKETBALL: ESPN, The Athletic, Bleacher Report, Yahoo Sports, CBS Sports, HoopsHype, Basketball Reference, The Ringer NBA, Thinking Basketball
+MMA/BOXING: MMA Fighting, Sherdog, BoxingScene
+SOCCER: Goal.com, FotMob, OneFootball
+MOTORSPORTS (Cars): MotorTrend, Car and Driver, Road & Track, Top Gear, Hoonigan, The Drive, Jalopnik, SpeedHunters, ChrisFix, Engineering Explained, Scotty Kilmer, Donut Media, VINwiki, Manny Khoshbin, Supercar Blondie
+MOTORCYCLES: Cycle World, RevZilla Common Tread, Motorcycle.com, RideApart, Yammie Noob, FortNine, Motojitsu, 44Teeth, MotoGP, WorldSBK
+CIGARS: Cigar Aficionado, Half Wheel, Cigar Dojo, Blind Man's Puff, Stogie Review
+
+When he asks about any of these topics, you speak with the depth of someone who reads all these sources regularly.
+
+RESPONSE STYLE:
+- Confident, sharp, intelligent. Let your Latin warmth show occasionally.
+- Use city database costs when comparing. Always quote C$ from database.
+- When recommending cities, reference his budget if set.
+- Morning brief format: ▸ SITUATION REPORT → ▸ KEY DEVELOPMENTS → ▸ TRAVEL INTEL → ▸ MOVE OF THE DAY
+- Format responses with bold headers, bullet points. Keep it tight — he wants intel, not essays.
+- You can be direct, even provocative in your analysis. He can handle the truth.`;
+}
+
+function xioMd(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--tx)">$1</strong>')
+    .replace(/\*([^*]+?)\*/g,'<em style="color:rgba(255,107,157,.8)">$1</em>')
+    .replace(/^#{1,2} (.+)$/gm,'<div style="font-weight:900;color:#FF6B9D;font-size:11px;margin:8px 0 3px;letter-spacing:.04em">$1</div>')
+    .replace(/^#{3} (.+)$/gm,'<div style="font-weight:800;color:var(--cy);font-size:10px;margin:6px 0 2px">$1</div>')
+    .replace(/^▸ (.+)$/gm,'<div style="color:var(--cy);font-weight:800;margin:5px 0 1px;font-size:11px">▸ $1</div>')
+    .replace(/^[•\-\*] (.+)$/gm,'<div style="padding-left:14px;margin:2px 0;position:relative"><span style="position:absolute;left:4px;color:rgba(255,107,157,.6)">·</span>$1</div>')
+    .replace(/\n\n/g,'<div style="height:6px"></div>')
+    .replace(/\n/g,'<br>');
+}
+
+function renderXioChat() {
+  const el = document.getElementById('xio-chat');
+  if(!el) return;
+  if(!S.xiomara.msgs.length) {
+    el.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 20px;text-align:center">
+      <div style="font-size:40px;animation:xio-pulse 2.5s infinite">🌹</div>
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:#FF6B9D;letter-spacing:.12em">XIOMARA</div>
+      <div style="font-size:10px;color:var(--mu);max-width:260px;line-height:1.7">Your personal intelligence advisor. Ask me anything — morning briefs, travel planning, lifestyle intel, city comparisons.</div>
+      <div style="font-size:9px;color:rgba(255,107,157,.4);margin-top:4px">Use the quick buttons → or type anything below</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = S.xiomara.msgs.map((m,i) => {
+    const isUser = m.role==='user';
+    const isLast = i===S.xiomara.msgs.length-1;
+    const streaming = isLast && !isUser && S.xiomara.streaming;
+    if(isUser) return `<div style="display:flex;justify-content:flex-end;margin:4px 0">
+      <div style="max-width:78%;background:rgba(0,207,255,.08);border:1px solid rgba(0,207,255,.18);border-radius:12px 12px 3px 12px;padding:9px 13px;font-size:11px;color:var(--tx);line-height:1.5">${m.content.replace(/</g,'&lt;')}</div>
+    </div>`;
+    return `<div style="display:flex;gap:9px;align-items:flex-start;margin:4px 0">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#C9284C,#FF6B9D);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px;box-shadow:0 0 8px rgba(255,107,157,.25)">🌹</div>
+      <div style="max-width:84%;background:rgba(255,107,157,.04);border:1px solid rgba(255,107,157,.1);border-radius:3px 12px 12px 12px;padding:10px 13px;font-size:11px;color:var(--tx);line-height:1.65">
+        ${m.content?xioMd(m.content):'<span style="color:rgba(255,107,157,.4)">Thinking...</span>'}
+        ${streaming?`<span style="display:inline-block;width:2px;height:12px;background:#FF6B9D;animation:blink .65s infinite;vertical-align:middle;margin-left:3px;border-radius:1px"></span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendToXiomara(userMsg) {
+  if(!userMsg.trim()||S.xiomara.streaming) return;
+  const key = S.xiomara.apiKey;
+  if(!key) return;
+  S.xiomara.msgs.push({role:'user',content:userMsg.trim()});
+  S.xiomara.msgs.push({role:'assistant',content:''});
+  S.xiomara.streaming = true;
+  renderXioChat();
+  const msgs = [
+    {role:'system', content:buildXioSystem()},
+    ...S.xiomara.msgs.slice(0,-1).map(m=>({role:m.role,content:m.content})),
+  ];
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+key,
+      },
+      body:JSON.stringify({
+        model:'llama-3.3-70b-versatile',
+        max_tokens:2048,
+        stream:true,
+        messages:msgs,
+      }),
+    });
+    if(!res.ok) {
+      const err = await res.json().catch(()=>({error:{message:'HTTP '+res.status}}));
+      S.xiomara.msgs[S.xiomara.msgs.length-1].content = `⚠️ ${err.error?.message||'API error — check your key'}`;
+    } else {
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      while(true) {
+        const {done,value} = await reader.read();
+        if(done) break;
+        buf += dec.decode(value,{stream:true});
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for(const line of lines) {
+          if(!line.startsWith('data: ')) continue;
+          const d = line.slice(6).trim();
+          if(d==='[DONE]') continue;
+          try {
+            const ev = JSON.parse(d);
+            const txt = ev.choices?.[0]?.delta?.content;
+            if(txt) {
+              S.xiomara.msgs[S.xiomara.msgs.length-1].content += txt;
+              renderXioChat();
+            }
+          } catch {}
+        }
+      }
+    }
+  } catch(e) {
+    S.xiomara.msgs[S.xiomara.msgs.length-1].content = `⚠️ Connection error: ${e.message}`;
+  }
+  S.xiomara.streaming = false;
+  renderXioChat();
+  localStorage.setItem('hyk_xio_msgs',JSON.stringify(S.xiomara.msgs.slice(-30)));
+}
+
+function xioSend() {
+  const inp = document.getElementById('xio-input');
+  if(!inp) return;
+  const msg = inp.value.trim();
+  if(!msg) return;
+  inp.value = '';
+  sendToXiomara(msg);
+}
+
+function xioQuick(msg) { sendToXiomara(msg); }
+
+function xioSaveKey() {
+  const inp = document.getElementById('xio-key-inp');
+  if(!inp) return;
+  const k = inp.value.trim();
+  if(!k) return;
+  S.xiomara.apiKey = k;
+  localStorage.setItem('hyk_xio_key',k);
+  render();
+}
+
+function xioClearChat() {
+  S.xiomara.msgs = [];
+  localStorage.removeItem('hyk_xio_msgs');
+  renderXioChat();
+}
+
+function getXioVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  // Prefer Google UK English Female, then any English female, then any English
+  return voices.find(v => v.name === 'Google UK English Female')
+      || voices.find(v => /female/i.test(v.name) && /en[-_]/i.test(v.lang))
+      || voices.find(v => /female/i.test(v.name))
+      || voices.find(v => /en[-_]/i.test(v.lang))
+      || voices[0] || null;
+}
+
+function xioSpeak(text) {
+  window.speechSynthesis.cancel();
+  const clean = text.replace(/#{1,6}\s/g,'').replace(/\*{1,3}([^*]+)\*{1,3}/g,'$1')
+    .replace(/`[^`]*`/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\n{2,}/g,'. ').trim();
+  const utt = new SpeechSynthesisUtterance(clean);
+  const voice = getXioVoice();
+  if(voice) utt.voice = voice;
+  utt.pitch = 1.1;
+  utt.rate  = 0.88;
+  utt.lang  = 'en-US';
+  utt.onstart = () => updateXioSpeakBtn(true);
+  utt.onend   = () => updateXioSpeakBtn(false);
+  utt.onerror = () => updateXioSpeakBtn(false);
+  window.speechSynthesis.speak(utt);
+}
+
+function xioSpeakLast() {
+  if(window.speechSynthesis.speaking) { window.speechSynthesis.cancel(); updateXioSpeakBtn(false); return; }
+  const last = [...S.xiomara.msgs].reverse().find(m => m.role === 'assistant' && m.content.trim());
+  if(!last) return;
+  xioSpeak(last.content);
+}
+
+function updateXioSpeakBtn(speaking) {
+  const btn = document.getElementById('xio-speak-btn');
+  if(!btn) return;
+  btn.textContent = speaking ? '🔇' : '🔊';
+  btn.style.animation = speaking ? 'xio-speak 1.4s infinite' : 'none';
+  btn.style.color = speaking ? '#FF6B9D' : 'rgba(255,107,157,.55)';
+}
+
+function tXiomara() {
+  const hasKey = !!S.xiomara.apiKey;
+  const quickBtns = [
+    {label:'☀️ Morning Brief',   msg:'Give me my morning intelligence brief for today. Structure it: SITUATION REPORT, KEY DEVELOPMENTS, TRAVEL INTEL, MOVE OF THE DAY.'},
+    {label:'🏎️ Supercar Weekend', msg:'I want to rent a Lamborghini or Ferrari for a weekend. Which city in my database gives me the best experience for my budget? Include approximate cost.'},
+    {label:'💎 Luxury Per Dollar',msg:'Rank the top 5 cities from my database where my money gets me the most luxury — private pools, fine dining, VIP nightlife. Compare Bangkok vs Dubai vs Medellín.'},
+    {label:'📏 Height Advantage', msg:'I\'m 6\'2" (188cm). Rank the cities in my database by how tall I would be perceived — giant to average. Include each country\'s average male height and the perception delta.'},
+    {label:'🌺 Afro-Latina Guide',msg:'Which cities in my database give me the best opportunity to meet Afro-Latina women? Rank by demographic density and dating scene quality.'},
+    {label:'🧵 Bespoke Suits',    msg:'Where can I get a custom bespoke suit worth the trip? Rank by quality and price, and tell me which cities in my database are closest to the best tailoring destinations.'},
+    {label:'🥃 Cigar & Nightlife',msg:'Rank my cities for cigar lounge culture, rooftop bars, and high-end nightlife. Where do I go for a luxury night out?'},
+    {label:'🏍️ Motorcycle Rentals',msg:'Where can I rent a motorcycle or superbike for cheap? What\'s the licensing situation for a Canadian? Rank by value and experience.'},
+    {label:'🎌 JDM Experience',   msg:'I want to drive a Nissan GTR Skyline or other JDM legends. Where in the world can I do this and what\'s the cost?'},
+  ];
+  return `
+  <div style="display:grid;grid-template-columns:1fr 310px;gap:12px;height:calc(100vh - 82px)">
+
+    <!-- ── CHAT COLUMN ── -->
+    <div style="display:flex;flex-direction:column;background:var(--s1);border:1px solid rgba(255,107,157,.15);border-radius:var(--r);overflow:hidden">
+
+      <!-- Header -->
+      <div style="padding:11px 15px;border-bottom:1px solid rgba(255,107,157,.1);display:flex;align-items:center;gap:10px;flex-shrink:0;background:rgba(255,107,157,.02)">
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#8B0020,#FF6B9D);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 14px rgba(255,107,157,.35);animation:xio-pulse 3s infinite">🌹</div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:#FF6B9D;letter-spacing:.12em;text-shadow:0 0 12px rgba(255,107,157,.4)">XIOMARA</div>
+          <div style="font-size:9px;color:var(--mu)">Personal Intelligence Advisor · HYK Terminal v2</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <div style="display:flex;align-items:center;gap:5px">
+            <div style="width:7px;height:7px;border-radius:50%;background:${hasKey?'var(--gn)':'var(--rd)'};box-shadow:0 0 5px ${hasKey?'var(--gn)':'var(--rd)'}"></div>
+            <span style="font-size:9px;color:var(--mu)">${hasKey?'Active':'No Key'}</span>
+          </div>
+          <button id="xio-speak-btn" onclick="xioSpeakLast()" title="Hear Xiomara speak"
+            style="padding:3px 8px;background:rgba(255,107,157,.06);border:1px solid rgba(255,107,157,.18);border-radius:4px;color:rgba(255,107,157,.55);font-size:13px;cursor:pointer;line-height:1;transition:color .2s">🔊</button>
+          ${S.xiomara.msgs.length>0?`<button onclick="xioClearChat()" style="padding:3px 8px;background:rgba(255,51,85,.07);border:1px solid rgba(255,51,85,.18);border-radius:4px;color:var(--rd);font-size:8px;font-weight:700;cursor:pointer">Clear</button>`:''}
+        </div>
+      </div>
+
+      ${!hasKey?`
+      <!-- API Key Setup -->
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:30px">
+        <div style="max-width:420px;width:100%;text-align:center">
+          <div style="font-size:44px;margin-bottom:14px;animation:xio-pulse 2.5s infinite">🌹</div>
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:#FF6B9D;margin-bottom:8px;letter-spacing:.1em">ACTIVATE XIOMARA</div>
+          <div style="font-size:10px;color:var(--mu);margin-bottom:20px;line-height:1.7;max-width:340px;margin-left:auto;margin-right:auto">
+            Xiomara runs on Llama 3.1 70B via Groq — completely free. Sign up at console.groq.com, grab your API key, paste it below. Stored locally, never leaves your machine except to Groq's servers.
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input id="xio-key-inp" type="password" placeholder="gsk_..."
+              style="flex:1;padding:10px 13px;background:var(--s2);border:1px solid rgba(255,107,157,.3);border-radius:var(--rs);color:var(--tx);font-size:11px;outline:none;font-family:'Inter',sans-serif"
+              onkeydown="if(event.key==='Enter')xioSaveKey()"/>
+            <button onclick="xioSaveKey()" style="padding:10px 16px;background:linear-gradient(135deg,#8B0020,#FF6B9D);border:none;border-radius:var(--rs);color:#fff;font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.06em;white-space:nowrap">CONNECT</button>
+          </div>
+          <div style="font-size:9px;color:rgba(255,107,157,.4)">Free key at <span style="color:#FF6B9D">console.groq.com</span> → API Keys — no credit card needed</div>
+        </div>
+      </div>
+      `:`
+      <!-- Chat Messages -->
+      <div id="xio-chat" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:4px">
+      </div>
+
+      <!-- Input Bar -->
+      <div style="padding:10px 12px;border-top:1px solid rgba(255,107,157,.08);flex-shrink:0;background:rgba(255,107,157,.01)">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="xio-input" type="text" placeholder="Ask Xiomara anything — travel, intel, lifestyle, city comparisons..."
+            style="flex:1;padding:9px 13px;background:var(--s2);border:1px solid rgba(255,107,157,.18);border-radius:var(--rs);color:var(--tx);font-size:11px;outline:none;font-family:'Inter',sans-serif;transition:border .15s"
+            onfocus="this.style.borderColor='rgba(255,107,157,.45)'"
+            onblur="this.style.borderColor='rgba(255,107,157,.18)'"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();xioSend()}"/>
+          <button onclick="xioSend()" title="Send"
+            style="width:36px;height:36px;background:linear-gradient(135deg,#8B0020,#FF6B9D);border:none;border-radius:var(--rs);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s;box-shadow:0 2px 8px rgba(255,107,157,.3)"
+            onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">→</button>
+        </div>
+      </div>
+      `}
+    </div>
+
+    <!-- ── RIGHT PANEL ── -->
+    <div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto">
+
+      <!-- Quick Actions -->
+      <div style="background:var(--s1);border:1px solid rgba(255,107,157,.12);border-radius:var(--r);padding:12px">
+        <div class="ct" style="color:rgba(255,107,157,.55)"><div class="ctd" style="background:#FF6B9D"></div>QUICK INTEL</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          ${quickBtns.map(b=>`<button onclick='xioQuick(${JSON.stringify(b.msg)})'
+            style="padding:7px 10px;background:rgba(255,107,157,.04);border:1px solid rgba(255,107,157,.1);border-radius:var(--rs);color:var(--mu);font-size:10px;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;display:flex;align-items:center;gap:7px"
+            onmouseover="this.style.background='rgba(255,107,157,.1)';this.style.color='#FF6B9D';this.style.borderColor='rgba(255,107,157,.3)'"
+            onmouseout="this.style.background='rgba(255,107,157,.04)';this.style.color='var(--mu)';this.style.borderColor='rgba(255,107,157,.1)'">${b.label}</button>`).join('')}
+        </div>
+      </div>
+
+      <!-- Active Context -->
+      <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:12px">
+        <div class="ct"><div class="ctd"></div>ACTIVE CONTEXT</div>
+        ${[
+          ['Travel Budget', S.travelBudget?`C$${S.travelBudget.toLocaleString()}/mo`:'Not set', S.travelBudget?'var(--gn)':'var(--rd)'],
+          ['Cities Tracked', `${CITIES.length+S.customCities.length}`, 'var(--cy)'],
+          ['FX Rates', S.fx.rates?`Live · ${S.fx.date}`:'Loading...', S.fx.rates?'var(--gn)':'var(--or)'],
+          ['Display Currency', S.fx.displayCur, 'var(--gold)'],
+          ['Chat History', `${S.xiomara.msgs.length} messages`, 'var(--mu)'],
+        ].map(([k,v,c])=>`<div style="display:flex;justify-content:space-between;font-size:10px;padding:4px 0;border-bottom:1px solid var(--dm)">
+          <span style="color:var(--mu)">${k}</span><span style="font-weight:700;color:${c}">${v}</span>
+        </div>`).join('')}
+      </div>
+
+      <!-- MU Quick Reference -->
+      <div style="background:var(--s1);border:1px solid rgba(255,107,157,.1);border-radius:var(--r);padding:12px">
+        <div class="ct" style="color:rgba(255,107,157,.55)"><div class="ctd" style="background:#FF6B9D"></div>🌹 BEAUTY BONUS</div>
+        ${[
+          {t:'S',c:'var(--gn)',  bonus:'+15%', countries:'Venezuela · USA · Philippines · Mexico · Brazil · Puerto Rico'},
+          {t:'A',c:'var(--cy)',  bonus:'+10%', countries:'Colombia · India · Thailand · Australia · Nigeria · S.Korea · Japan'},
+          {t:'B',c:'var(--gold)',bonus:'+7%',  countries:'Dom.Rep · Jamaica · Sweden · Spain · Indonesia · Ukraine · S.Africa'},
+          {t:'C',c:'var(--or)', bonus:'+3%',  countries:'Denmark · Norway · Finland · France · Israel · Ethiopia · Morocco'},
+        ].map(r=>`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--dm);align-items:flex-start">
+          <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;gap:1px">
+            <div style="width:18px;height:16px;background:${r.c};border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:9px;font-weight:900;color:#030311">${r.t}</div>
+            <div style="font-size:8px;color:${r.c};font-weight:700">${r.bonus}</div>
+          </div>
+          <div style="font-size:9px;color:var(--mu);line-height:1.5">${r.countries}</div>
+        </div>`).join('')}
+      </div>
+
+      <!-- API Key Management -->
+      ${hasKey?`<div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:12px">
+        <div class="ct"><div class="ctd"></div>API KEY</div>
+        <div style="font-size:9px;color:var(--mu);margin-bottom:8px">Active: gsk_...${S.xiomara.apiKey.slice(-6)}</div>
+        <button onclick="S.xiomara.apiKey='';localStorage.removeItem('hyk_xio_key');render()"
+          style="padding:5px 10px;background:rgba(255,51,85,.07);border:1px solid rgba(255,51,85,.18);border-radius:4px;color:var(--rd);font-size:9px;font-weight:700;cursor:pointer;width:100%">Revoke Key</button>
+      </div>`:''}
+
+    </div>
+  </div>`;
+}
+
+// ── CCTV ──────────────────────────────────────────────────────────────────────
+function loadCam() {
+  const id = document.getElementById('cam-id')?.value;
+  const frame = document.getElementById('cam-frame');
+  if (frame && id) {
+    frame.src = `https://www.quebec511.info/fr/Diffusion/EtatReseau/Camera.aspx?Type=1&Id=${id}`;
+  }
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+let clockInterval;
+function startClock() {
+  clearInterval(clockInterval);
+  const tick = () => {
+    const now = new Date();
+    const clk = document.getElementById('hdr-clk');
+    const dt = document.getElementById('hdr-dt');
+    if(clk) clk.textContent = now.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    if(dt) dt.textContent = now.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'});
+  };
+  tick();
+  clockInterval = setInterval(tick, 1000);
+}
+
+// ── EVENTS ────────────────────────────────────────────────────────────────────
+document.addEventListener('click', e => {
+  const entcat = e.target.closest('[data-entcat]');
+  if(entcat){ S.entCat=entcat.dataset.entcat; S.entItems=[]; localStorage.setItem('hyk_ent_cat',S.entCat); render(); return; }
+  const srcf = e.target.closest('[data-srcf]');
+  if(srcf){ S.srcFilter=srcf.dataset.srcf; render(); return; }
+  const btn = e.target.closest('[data-v]');
+  if(btn){ if(btn.dataset.v!=='xiomara') window.speechSynthesis?.cancel(); S.view=btn.dataset.v; localStorage.setItem('hyk_intel_v',S.view); render(); return; }
+  if(e.target.id==='rbtn') fetchAll();
+});
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+// Pre-load speech voices (Chromium loads them async on first call)
+if(window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener('voiceschanged', () => window.speechSynthesis.getVoices());
+}
+
+render();
+fetchAll();
+fetchFX();
+setInterval(fetchAll, 5*60*1000); // auto-refresh every 5 min
+setInterval(fetchFX,  5*60*1000); // FX rates every 5 min
+</script>
+</body>
+</html>
